@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Загруженные файлы
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Логи
+*.log
+
+# Временные файлы
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment (если будет в src)
+.env
+.env.local
+.env.*.local
+
+# Composer (если будет)
+/vendor/
+composer.lock
+
+# Node modules (если будет фронтенд сборка)
+node_modules/
+npm-debug.log
+yarn-error.log
