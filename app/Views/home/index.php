@@ -5,6 +5,7 @@ declare(strict_types=1);
 $userName = $user['name'] ?? null;
 $isAuthenticated = $user !== null;
 $featuredTrack = is_array($featuredTrack ?? null) ? $featuredTrack : null;
+$heroTracks = is_array($heroTracks ?? null) ? $heroTracks : [];
 $latestTracks = is_array($latestTracks ?? null) ? $latestTracks : [];
 $popularTracks = is_array($popularTracks ?? null) ? $popularTracks : [];
 $roleLabels = [
@@ -242,44 +243,55 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
 
             <section class="hero">
                 <article class="hero__banner">
-                    <div class="hero__badge">Новый релиз</div>
-                    <h1 class="hero__title">
-                        <span class="hero__title-accent"><?= $h($featuredTrack['title'] ?? 'Музыка уже ждёт') ?></span>
-                    </h1>
-                    <p class="hero__description">
-                        <?php if ($featuredTrack !== null): ?>
-                            <?= $h(($featuredTrack['author_name'] ?? 'Неизвестный исполнитель') . (!empty($featuredTrack['album_title']) ? ' · альбом «' . $featuredTrack['album_title'] . '»' : '')) ?>
+                    <div class="hero__slideshow">
+                        <?php if ($heroTracks !== []): ?>
+                            <?php foreach ($heroTracks as $slideIdx => $slide): ?>
+                            <div class="hero__slide<?= $slideIdx === 0 ? ' hero__slide--active' : '' ?>">
+                                <div class="hero__badge">Новый релиз</div>
+                                <h1 class="hero__title">
+                                    <span class="hero__title-accent"><?= $h($slide['title']) ?></span>
+                                </h1>
+                                <p class="hero__description">
+                                    <?= $h(($slide['author_name'] ?? 'Неизвестный исполнитель') . (!empty($slide['album_title']) ? ' · альбом «' . $slide['album_title'] . '»' : '')) ?>
+                                </p>
+                                <div class="hero__actions">
+                                    <?php if (isset($trackIndexById[(int) $slide['id']])): ?>
+                                        <button class="button button--primary js-play-track" type="button" data-track-index="<?= $h($trackIndexById[(int) $slide['id']]) ?>">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l10.74-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z"></path>
+                                            </svg>
+                                            <span>Слушать сейчас</span>
+                                        </button>
+                                    <?php elseif (!$isAuthenticated): ?>
+                                        <a class="button button--primary" href="/register">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l10.74-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z"></path>
+                                            </svg>
+                                            <span>Создать аккаунт</span>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($slide['author_name'])): ?>
+                                        <button class="button button--secondary" type="button" disabled>
+                                            <?= $h('Исполнитель: ' . $slide['author_name']) ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
                         <?php else: ?>
-                            На платформе пока нет загруженных треков. Добавь первые записи через админку или кабинет автора.
-                        <?php endif; ?>
-                    </p>
-                    <div class="hero__actions">
-                        <?php if ($featuredTrack !== null && isset($trackIndexById[(int) $featuredTrack['id']])): ?>
-                            <button class="button button--primary js-play-track" type="button" data-track-index="<?= $h($trackIndexById[(int) $featuredTrack['id']]) ?>">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l10.74-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z"></path>
-                                </svg>
-                                <span>Слушать сейчас</span>
-                            </button>
-                        <?php elseif (!$isAuthenticated): ?>
-                            <a class="button button--primary" href="/register">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l10.74-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z"></path>
-                                </svg>
-                                <span>Создать аккаунт</span>
-                            </a>
-                        <?php endif; ?>
-
-                        <?php if ($featuredTrack !== null && !empty($featuredTrack['author_name'])): ?>
-                            <button class="button button--secondary" type="button" disabled>
-                                <?= $h('Исполнитель: ' . $featuredTrack['author_name']) ?>
-                            </button>
-                        <?php else: ?>
-                            <a class="button button--secondary" href="<?= $isAuthenticated ? '/admin' : '/login' ?>">
-                                <?= $isAuthenticated ? 'Открыть каталог' : 'Войти' ?>
-                            </a>
+                            <div class="hero__slide hero__slide--active">
+                                <div class="hero__badge">Новый релиз</div>
+                                <h1 class="hero__title"><span class="hero__title-accent">Музыка уже ждёт</span></h1>
+                                <p class="hero__description">На платформе пока нет загруженных треков. Добавь первые записи через админку или кабинет автора.</p>
+                                <div class="hero__actions">
+                                    <a class="button button--secondary" href="<?= $isAuthenticated ? '/admin' : '/login' ?>">
+                                        <?= $isAuthenticated ? 'Открыть каталог' : 'Войти' ?>
+                                    </a>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
+
                 </article>
 
                 <aside class="hero__mix mix-card">
@@ -706,6 +718,22 @@ window.PLAYER_CONFIG = {
     document.addEventListener('click', function () {
         document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
     });
+}());
+</script>
+<script>
+(function () {
+    var slides = document.querySelectorAll('.hero__slide');
+    if (slides.length <= 1) { return; }
+
+    var current = 0;
+
+    function goTo(idx) {
+        slides[current].classList.remove('hero__slide--active');
+        current = (idx + slides.length) % slides.length;
+        slides[current].classList.add('hero__slide--active');
+    }
+
+    setInterval(function () { goTo(current + 1); }, 8000);
 }());
 </script>
 </body>

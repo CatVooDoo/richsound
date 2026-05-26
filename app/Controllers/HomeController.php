@@ -31,6 +31,7 @@ final class HomeController extends Controller
         $latestTracks  = $trackModel->findPaginatedForHome($perPage, ($page - 1) * $perPage);
         $popularTracks = $trackModel->findPopularForHome(6);
         $featuredTrack = $popularTracks[0] ?? $latestTracks[0] ?? null;
+        $heroTracks    = array_slice($popularTracks !== [] ? $popularTracks : $latestTracks, 0, 5);
 
         $likedTrackIds = [];
         $userPlaylists = [];
@@ -46,6 +47,7 @@ final class HomeController extends Controller
             'success'       => Session::consumeFlash('success'),
             'error'         => Session::consumeFlash('error'),
             'featuredTrack' => $featuredTrack,
+            'heroTracks'    => $heroTracks,
             'latestTracks'  => $latestTracks,
             'popularTracks' => $popularTracks,
             'likedTrackIds' => $likedTrackIds,
