@@ -214,6 +214,12 @@
 
 .player-bar .player__slider:hover::after { transform: translate(-50%, -50%) scale(1); }
 
+/* На тач-экранах нет hover — показываем заливку и ползунок постоянно */
+@media (hover: none), (pointer: coarse) {
+    .player-bar .player__slider .player__slider-fill { background: #8b5cf6; }
+    .player-bar .player__slider::after { transform: translate(-50%, -50%) scale(1); }
+}
+
 .player-bar .player__range {
     position: absolute;
     top: -10px;
@@ -373,7 +379,8 @@
     transition: background .14s;
     border-radius: 0;
 }
-.player-queue__item:hover {
+.player-queue__item:hover,
+.player-queue__item:active {
     background: rgba(255,255,255,.05);
 }
 .player-queue__item--active {

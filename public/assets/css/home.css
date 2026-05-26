@@ -783,6 +783,14 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     transform: scale(1) translateY(0);
 }
 
+/* На тач-экранах нет hover — кнопку play показываем всегда */
+@media (hover: none), (pointer: coarse) {
+    .album-card__play {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
 .album-card__play:hover {
     box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
     background: white;
@@ -2017,7 +2025,8 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     transition: background .15s;
 }
 
-.search-dd__item:hover { background: rgba(255,255,255,.06); }
+.search-dd__item:hover,
+.search-dd__item:active { background: rgba(255,255,255,.06); }
 
 .search-dd__cover {
     width: 40px;
@@ -2067,7 +2076,8 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     transition: background .15s;
 }
 
-.search-dd__all:hover { background: rgba(139,92,246,.08); }
+.search-dd__all:hover,
+.search-dd__all:active { background: rgba(139,92,246,.08); }
 
 /* ── Search page hero ───────────────────────────────────── */
 .search-hero {
