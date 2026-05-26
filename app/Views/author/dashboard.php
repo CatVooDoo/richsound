@@ -168,6 +168,7 @@ $formatDuration = static function (mixed $seconds): string {
                     <button type="button" class="upload-zone__clear" id="audio-clear" aria-label="Убрать файл">✕</button>
                 </div>
                 <input type="file" name="audio_file" id="audio-input" accept=".mp3,.wav,audio/mpeg,audio/wav" class="upload-zone__input" aria-hidden="true" tabindex="-1">
+                <input type="hidden" name="duration" id="track-duration" value="0">
             </div>
 
             <div class="upload-meta">
@@ -653,6 +654,23 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
     var coverPlaceholder = document.getElementById('cover-placeholder');
 
     var audioReady = false;
+    var durationInput = document.getElementById('track-duration');
+
+    function readAudioDuration(file) {
+        if (!durationInput) { return; }
+        var url = URL.createObjectURL(file);
+        var audio = new Audio();
+        audio.preload = 'metadata';
+        audio.onloadedmetadata = function () {
+            durationInput.value = isFinite(audio.duration) ? Math.round(audio.duration) : 0;
+            URL.revokeObjectURL(url);
+        };
+        audio.onerror = function () {
+            durationInput.value = 0;
+            URL.revokeObjectURL(url);
+        };
+        audio.src = url;
+    }
 
     function updateSubmit() {
         if (!submitBtn) { return; }
@@ -672,6 +690,7 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
     function clearAudio() {
         audioReady = false;
         if (audioInput) { audioInput.value = ''; }
+        if (durationInput) { durationInput.value = '0'; }
         if (idleEl)     { idleEl.hidden = false; }
         if (selectedEl) { selectedEl.hidden = true; }
         dropZone && dropZone.classList.remove('upload-zone--has-file');
@@ -721,6 +740,7 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
             var dt = new DataTransfer();
             dt.items.add(file);
             audioInput.files = dt.files;
+            readAudioDuration(file);
             showAudioFile(file.name);
         });
     }
@@ -728,6 +748,7 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
     if (audioInput) {
         audioInput.addEventListener('change', function () {
             if (audioInput.files && audioInput.files[0]) {
+                readAudioDuration(audioInput.files[0]);
                 showAudioFile(audioInput.files[0].name);
             }
         });

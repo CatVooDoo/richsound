@@ -99,6 +99,8 @@ final class AuthorController extends Controller
         $title = trim((string) $request->input('title'));
         $albumIdRaw = $request->input('album_id');
         $albumId = ($albumIdRaw === '' || $albumIdRaw === null) ? null : (int) $albumIdRaw;
+        $durationRaw = (int) $request->input('duration');
+        $duration = $durationRaw > 0 ? $durationRaw : null;
 
         $errors = [];
 
@@ -155,7 +157,7 @@ final class AuthorController extends Controller
                 'title' => $title,
                 'file_path' => $audioRelPath,
                 'cover_path' => $coverRelPath,
-                'duration' => null,
+                'duration' => $duration,
                 'plays_count' => 0,
             ]);
         } catch (Throwable) {
