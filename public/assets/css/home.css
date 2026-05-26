@@ -460,12 +460,13 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
 /* ── Hero slideshow ────────────────────────────────────── */
 .hero__slideshow {
     position: relative;
-    min-height: 245px;
 }
 
 .hero__slide {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -475,7 +476,9 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     transition: opacity 1.4s ease;
 }
 
+/* Активный слайд — в потоке, задаёт высоту контейнера */
 .hero__slide--active {
+    position: relative;
     opacity: 1;
     pointer-events: auto;
 }
