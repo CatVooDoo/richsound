@@ -126,10 +126,18 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
             </a>
             <a class="sidebar__link" href="/library">
                 <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22z"></path>
-                    <path d="M8 4v16"></path>
+                    <path d="m16 6 4 14"></path>
+                    <path d="M12 6v14"></path>
+                    <path d="M8 8v12"></path>
+                    <path d="M4 4v16"></path>
                 </svg>
-                <span class="sidebar__text">Библиотека</span>
+                <span class="sidebar__text">Моя медиатека</span>
+            </a>
+            <a class="sidebar__link sidebar__link--create" href="/library">
+                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                <span class="sidebar__text">Создать</span>
             </a>
             <a class="sidebar__link" href="/podcasts">
                 <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
