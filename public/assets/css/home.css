@@ -1788,6 +1788,9 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     /* Hide side (volume) on mini player */
     .dashboard__player .player__side { display: none; }
 
+    /* Mini player: now-playing area opens full-screen player on tap */
+    .dashboard__player .player__now { cursor: pointer; }
+
     /* ── Topbar ────────────────────────────────────────────────── */
     .topbar {
         flex-wrap: wrap;
@@ -3291,3 +3294,416 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
 }
 .lib-alert--success { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.25); }
 .lib-alert--error   { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.25); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Mobile full-screen player
+   Only active on ≤760px — hidden entirely on desktop
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hidden on desktop */
+.mobile-player { display: none; }
+
+@media (max-width: 760px) {
+
+/* Lock scroll when player is open */
+body.mplayer-open { overflow: hidden; }
+
+/* ── Shell ────────────────────────────────────────────────────── */
+.mobile-player {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    overflow: hidden;
+    /* starts off-screen */
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.mobile-player--open {
+    transform: translateY(0);
+}
+
+/* ── Background layers ────────────────────────────────────────── */
+
+/* Blurred album art — JS sets style="background-image:url(...)" */
+.mplayer__bg {
+    position: absolute;
+    inset: -50px;
+    z-index: 0;
+    background-color: #1a0a2e;   /* fallback purple until cover loads */
+    background-size: cover;
+    background-position: center;
+    filter: blur(80px) brightness(0.28) saturate(2);
+    transition: background-image 0.6s ease;
+}
+
+/* Gradient overlay — dark at bottom for readability */
+.mplayer__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        180deg,
+        rgba(7, 8, 14, 0.18)  0%,
+        rgba(7, 8, 14, 0.50)  40%,
+        rgba(7, 8, 14, 0.82)  65%,
+        rgba(7, 8, 14, 0.97) 100%
+    );
+    pointer-events: none;
+}
+
+/* ── Content wrapper (above bg layers) ───────────────────────── */
+.mplayer__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 28px
+             calc(env(safe-area-inset-bottom, 0px) + 24px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mplayer__content::-webkit-scrollbar { display: none; }
+
+/* ── Header ───────────────────────────────────────────────────── */
+.mplayer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.mplayer__header-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Icon button (shared: close, more, heart, shuffle, repeat) ── */
+.mplayer__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 0;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: color 0.15s, transform 0.1s;
+    padding: 0;
+}
+
+.mplayer__icon-btn:active { transform: scale(0.88); }
+
+/* ── Cover art ────────────────────────────────────────────────── */
+.mplayer__art-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 0 16px;
+}
+
+.mplayer__art {
+    width: min(calc(100vw - 56px), 340px);
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background:
+        linear-gradient(135deg, #27131c 0%, #3b1d4e 45%, #6b2080 100%);
+    background-size: cover;
+    background-position: center;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.55),
+        0  8px 24px rgba(0, 0, 0, 0.35);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.35s ease;
+}
+
+/* Art scales up slightly while playing */
+.mobile-player--playing .mplayer__art {
+    transform: scale(1.04);
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.65),
+        0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Meta (title + artist + heart) ───────────────────────────── */
+.mplayer__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+}
+
+.mplayer__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mplayer__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+}
+
+.mplayer__artist {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Heart: filled when liked */
+.mplayer__heart.is-liked { color: #fff; }
+
+/* ── Progress bar ─────────────────────────────────────────────── */
+.mplayer__progress {
+    flex-shrink: 0;
+    padding-bottom: 4px;
+}
+
+.mplayer__slider {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    margin-bottom: 8px;
+}
+
+.mplayer__slider-rail {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.mplayer__slider-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    border-radius: 2px;
+    background: #fff;
+    pointer-events: none;
+    transition: width 0.1s linear;
+}
+
+/* Thumb appears on hover/touch */
+.mplayer__slider:hover .mplayer__slider-fill::after,
+.mplayer__slider:active .mplayer__slider-fill::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.mplayer__range {
+    position: absolute;
+    inset: -10px 0;
+    width: 100%;
+    height: calc(100% + 20px);
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.mplayer__times {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.02em;
+}
+
+/* ── Controls row ─────────────────────────────────────────────── */
+.mplayer__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 6px 0 12px;
+}
+
+.mplayer__skip {
+    color: #fff;
+}
+
+/* Big play/pause button */
+.mplayer__play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 66px;
+    height: 66px;
+    background: #fff;
+    border: 0;
+    border-radius: 50%;
+    color: #000;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    padding: 0;
+}
+
+.mplayer__play-btn:active {
+    transform: scale(0.93);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* play/pause icon visibility — synced to .is-playing via JS */
+.mplayer__icon-pause { display: none; }
+.mobile-player--playing .mplayer__icon-play  { display: none; }
+.mobile-player--playing .mplayer__icon-pause { display: block; }
+
+/* Active/enabled state for shuffle & repeat */
+.mplayer__icon-btn.is-active { color: var(--accent); }
+
+/* ── Volume ───────────────────────────────────────────────────── */
+.mplayer__volume {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.45);
+    padding-top: 4px;
+}
+
+.mplayer__vol-track {
+    flex: 1;
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.mplayer__vol-rail {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.mplayer__vol-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.75);
+    pointer-events: none;
+}
+
+/* ── Queue (scroll to reveal) ─────────────────────────────────── */
+.mplayer__queue {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.mplayer__queue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.mplayer__queue-title-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.mplayer__queue-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.mplayer__queue-item:active {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Playing track highlighted */
+.mplayer__queue-item--active .mplayer__queue-track {
+    color: var(--accent, #8b5cf6);
+}
+
+/* Skeleton placeholders — muted until JS replaces them */
+.mplayer__queue-item--skeleton {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.mplayer__queue-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #2a1040 0%, #3b1d4e 100%);
+    background-size: cover;
+    background-position: center;
+}
+
+.mplayer__queue-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mplayer__queue-track {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mplayer__queue-artist {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mplayer__queue-dur {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+} /* end @media (max-width: 760px) — mobile player */
