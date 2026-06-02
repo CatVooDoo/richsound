@@ -97,6 +97,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Richsound</title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/home.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
 </head>
@@ -228,6 +229,10 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                            placeholder="Искать в Richsound..." autocomplete="off">
                     <div class="search-dropdown js-search-dropdown" hidden></div>
                 </form>
+
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Светлая тема">
+                    <span class="theme-icon">☀</span>
+                </button>
 
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar__profile">

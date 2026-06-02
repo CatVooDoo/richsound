@@ -27,6 +27,29 @@
     --transition:     0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme="light"] {
+    --bg:            #f8f7ff;
+    --panel:         rgba(255, 255, 255, 0.95);
+    --panel-soft:    rgba(245, 244, 255, 0.85);
+    --stroke:        rgba(0, 0, 0, 0.07);
+    --stroke-strong: rgba(0, 0, 0, 0.13);
+    --text:          #1a1828;
+    --muted:         #6b6a7a;
+    --muted-soft:    #9896a8;
+    --accent-glow:   rgba(139, 92, 246, 0.18);
+    --accent-2-glow: rgba(34, 211, 238, 0.14);
+    --shadow-card:   0 8px 32px rgba(0, 0, 0, 0.10);
+    --shadow-deep:   0 24px 80px rgba(0, 0, 0, 0.16);
+}
+
+[data-theme="light"] body {
+    background:
+        radial-gradient(ellipse 80% 50% at -10% -10%, rgba(139, 92, 246, 0.07) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 110% 0%, rgba(34, 211, 238, 0.05) 0%, transparent 45%),
+        linear-gradient(180deg, #f8f7ff 0%, #f0eef8 100%);
+    background-attachment: fixed;
+}
+
 /* ── Reset ──────────────────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -3679,6 +3702,26 @@ body.mplayer-open { overflow: hidden; }
     font-size: 12px;
     color: rgba(255, 255, 255, 0.35);
     flex-shrink: 0;
+}
+
+/* ── Theme toggle button ────────────────────────────────────────── */
+
+.theme-toggle-btn {
+    background: var(--panel);
+    border: 1px solid var(--stroke-strong);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px 10px;
+    transition: var(--transition);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 } /* end @media (max-width: 760px) — mobile player */
