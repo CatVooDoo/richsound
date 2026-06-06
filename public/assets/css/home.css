@@ -27,26 +27,38 @@
     --transition:     0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — palette per theme.png (lavender-white surface,
+   near-black ink, violet→cyan accent kept from the dark theme).
+   All overrides are isolated under [data-theme="light"] so the
+   dark theme remains the untouched default.
+   ═══════════════════════════════════════════════════════════════ */
+
 [data-theme="light"] {
-    --bg:            #f8f7ff;
-    --panel:         rgba(255, 255, 255, 0.95);
-    --panel-soft:    rgba(245, 244, 255, 0.85);
-    --stroke:        rgba(0, 0, 0, 0.07);
-    --stroke-strong: rgba(0, 0, 0, 0.13);
-    --text:          #1a1828;
-    --muted:         #6b6a7a;
-    --muted-soft:    #9896a8;
-    --accent-glow:   rgba(139, 92, 246, 0.18);
-    --accent-2-glow: rgba(34, 211, 238, 0.14);
-    --shadow-card:   0 8px 32px rgba(0, 0, 0, 0.10);
-    --shadow-deep:   0 24px 80px rgba(0, 0, 0, 0.16);
+    --bg:            #f1eff8;
+    --panel:         #ffffff;
+    --panel-soft:    #f7f5fd;
+    --stroke:        rgba(20, 16, 40, 0.08);
+    --stroke-strong: rgba(20, 16, 40, 0.14);
+    --text:          #16131f;
+    --muted:         #5c5870;
+    --muted-soft:    #8b8799;
+    --accent-glow:   rgba(139, 92, 246, 0.22);
+    --accent-2-glow: rgba(34, 211, 238, 0.16);
+    --shadow-card:   0 8px 32px rgba(76, 60, 130, 0.10);
+    --shadow-deep:   0 24px 80px rgba(76, 60, 130, 0.16);
+
+    /* Semantic helpers used only by the light overrides below */
+    --ink-overlay:   rgba(20, 16, 40, 0.05);
+    --ink-overlay-2: rgba(20, 16, 40, 0.09);
 }
 
 [data-theme="light"] body {
     background:
-        radial-gradient(ellipse 80% 50% at -10% -10%, rgba(139, 92, 246, 0.07) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 40% at 110% 0%, rgba(34, 211, 238, 0.05) 0%, transparent 45%),
-        linear-gradient(180deg, #f8f7ff 0%, #f0eef8 100%);
+        radial-gradient(ellipse 80% 50% at -10% -10%, rgba(139, 92, 246, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 110% 0%, rgba(34, 211, 238, 0.07) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 50% at 50% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #f4f2fb 0%, #ece9f6 100%);
     background-attachment: fixed;
 }
 
@@ -3704,6 +3716,8 @@ body.mplayer-open { overflow: hidden; }
     flex-shrink: 0;
 }
 
+} /* end @media (max-width: 760px) — mobile player */
+
 /* ── Theme toggle button ────────────────────────────────────────── */
 
 .theme-toggle-btn {
@@ -3724,4 +3738,191 @@ body.mplayer-open { overflow: hidden; }
     border-color: var(--accent);
 }
 
-} /* end @media (max-width: 760px) — mobile player */
+/* Icon rendered via CSS so it matches the theme on first paint (no flash);
+   theme.js only keeps the aria-label in sync. */
+.theme-icon::before { content: '\263C'; } /* ☼ sun — dark theme active */
+[data-theme="light"] .theme-icon::before { content: '\263D'; } /* ☽ moon — light theme active */
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — component overrides (home page)
+   Targets the hardcoded dark-on-light colours that variables alone
+   can't reach. Scoped entirely under [data-theme="light"].
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.35); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+
+/* Dashboard shell + sidebar */
+[data-theme="light"] .dashboard {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: var(--stroke);
+    box-shadow: var(--shadow-deep), 0 0 0 1px rgba(139, 92, 246, 0.05) inset;
+}
+
+/* Sidebar chrome — desktop only; on mobile the sidebar collapses into
+   the dark bottom-nav bar, which must stay dark. */
+@media (min-width: 761px) {
+    [data-theme="light"] .dashboard__sidebar {
+        background:
+            linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
+            #faf9fe;
+        border-right-color: var(--stroke);
+    }
+
+    [data-theme="light"] .sidebar__label { color: rgba(20, 16, 40, 0.35); }
+    [data-theme="light"] .sidebar__link  { color: #4a4760; }
+    [data-theme="light"] .sidebar__link:hover {
+        background: var(--ink-overlay);
+        color: var(--text);
+    }
+    [data-theme="light"] .sidebar__link--active {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.14) 0%, rgba(34, 211, 238, 0.07) 100%);
+        border-color: rgba(139, 92, 246, 0.3);
+        color: var(--text);
+        box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.14) inset, 0 4px 16px rgba(139, 92, 246, 0.12);
+    }
+}
+
+/* Topbar / tabs */
+[data-theme="light"] .tabs__item            { color: #6b6878; }
+[data-theme="light"] .tabs__item:hover       { color: rgba(20, 16, 40, 0.85); }
+[data-theme="light"] .tabs__item--active     { color: var(--text); }
+[data-theme="light"] .tabs__item:focus-visible { color: var(--text); }
+[data-theme="light"] .topbar__profile-name   { color: var(--text); }
+[data-theme="light"] .topbar__auth-link      { color: #4a4760; }
+[data-theme="light"] .topbar__auth-link:hover {
+    background: var(--ink-overlay);
+    border-color: rgba(20, 16, 40, 0.18);
+    color: var(--text);
+}
+[data-theme="light"] .topbar__icon-button       { color: #6b6878; }
+[data-theme="light"] .topbar__icon-button:hover {
+    background: var(--ink-overlay);
+    color: var(--text);
+}
+
+/* Search field */
+[data-theme="light"] .search { background: var(--ink-overlay); }
+[data-theme="light"] .search:focus-within { background: rgba(139, 92, 246, 0.07); }
+
+/* Alerts */
+[data-theme="light"] .alert--success {
+    color: #047857;
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+[data-theme="light"] .alert--error {
+    color: #be185d;
+    background: rgba(244, 114, 182, 0.12);
+    border-color: rgba(244, 114, 182, 0.3);
+}
+
+/* Shared card surface — hero banner, mix card, player.
+   Album art / track covers are intentionally excluded: they stand
+   in for real cover artwork and stay rich regardless of theme. */
+[data-theme="light"] .hero__banner,
+[data-theme="light"] .mix-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    border-color: var(--stroke);
+}
+
+/* Hero — replace the dark readability veils with light tints */
+[data-theme="light"] .hero__banner::before {
+    background:
+        radial-gradient(circle at 30% 38%, rgba(139, 92, 246, 0.16), transparent 38%),
+        radial-gradient(circle at 75% 28%, rgba(34, 211, 238, 0.12), transparent 34%);
+}
+[data-theme="light"] .hero__banner::after { opacity: 0.22; }
+[data-theme="light"] .hero__description   { color: var(--muted); }
+
+/* Secondary text — the hardcoded mid-greys read low-contrast on a light
+   surface, so map them to the theme's muted ink. */
+[data-theme="light"] .album-card__artist,
+[data-theme="light"] .album-card__stats,
+[data-theme="light"] .track-card__artist,
+[data-theme="light"] .track-card__meta,
+[data-theme="light"] .mix-card__description { color: var(--muted); }
+
+/* Buttons */
+[data-theme="light"] .button--secondary {
+    background: var(--ink-overlay);
+    color: var(--text);
+}
+[data-theme="light"] .button--secondary:hover {
+    background: var(--ink-overlay-2);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+
+/* Track cards */
+[data-theme="light"] .track-card:hover {
+    box-shadow: 0 8px 28px rgba(76, 60, 130, 0.12), 0 0 0 1px rgba(139, 92, 246, 0.12) inset;
+}
+[data-theme="light"] .track-actions__like,
+[data-theme="light"] .track-actions__add {
+    background: var(--ink-overlay);
+    border-color: rgba(20, 16, 40, 0.1);
+}
+[data-theme="light"] .track-actions__like:hover,
+[data-theme="light"] .track-actions__add:hover {
+    background: var(--ink-overlay-2);
+    color: var(--text);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+
+/* Playlist dropdown */
+[data-theme="light"] .playlist-dropdown {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 20px 48px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.08);
+}
+[data-theme="light"] .playlist-dropdown button       { color: #3f3c52; }
+[data-theme="light"] .playlist-dropdown button:hover { color: var(--text); }
+
+/* Empty state */
+[data-theme="light"] .empty-state {
+    border-color: rgba(20, 16, 40, 0.12);
+    background: rgba(20, 16, 40, 0.02);
+    color: var(--muted);
+}
+
+/* Role cards (guest landing) */
+[data-theme="light"] .role-card:hover { box-shadow: 0 8px 40px rgba(76, 60, 130, 0.14); }
+[data-theme="light"] .role-card__icon { background: var(--ink-overlay); }
+[data-theme="light"] .perk--ok        { color: #3f3c52; }
+[data-theme="light"] .role-card__cta  { background: var(--ink-overlay); }
+[data-theme="light"] .role-card__cta:hover {
+    background: var(--ink-overlay-2);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+[data-theme="light"] .role-card__cta--accent       { color: #6d28d9; }
+[data-theme="light"] .role-card__cta--accent:hover { color: #5b21b6; }
+
+/* Player bar — desktop only; on mobile this footer becomes the dark
+   mini-player and the .player__* classes are reused by it, so keep them
+   dark there (the full-screen mobile player is never themed light). */
+@media (min-width: 761px) {
+[data-theme="light"] .dashboard__player {
+    background: #ffffff;
+    border-top-color: rgba(20, 16, 40, 0.08);
+}
+[data-theme="light"] .player__title { color: var(--text); }
+[data-theme="light"] .player__artist,
+[data-theme="light"] .player__time   { color: #6b6878; }
+[data-theme="light"] .player__btn        { color: #6b6878; }
+[data-theme="light"] .player__btn:hover  { color: var(--text); }
+[data-theme="light"] .player__btn--play {
+    background: var(--text);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(76, 60, 130, 0.25);
+}
+[data-theme="light"] .player__btn--play:hover {
+    background: #2a2640;
+    color: #fff;
+    box-shadow: 0 6px 28px rgba(76, 60, 130, 0.35);
+}
+[data-theme="light"] .player__slider-rail { background: rgba(20, 16, 40, 0.14); }
+[data-theme="light"] .player__slider-fill { background: #6b6878; }
+[data-theme="light"] .player__slider::after { background: var(--text); }
+}
+

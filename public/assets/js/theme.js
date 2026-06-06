@@ -15,8 +15,9 @@
     function updateIcon(theme) {
         var btn = document.querySelector('[data-theme-toggle]');
         if (!btn) return;
-        btn.setAttribute('aria-label', theme === 'light' ? 'Тёмная тема' : 'Светлая тема');
-        btn.querySelector('.theme-icon').textContent = theme === 'light' ? '☽' : '☀';
+        /* Icon glyph itself is rendered via CSS (.theme-icon::before) so it is
+           correct on first paint; here we only keep the label accessible. */
+        btn.setAttribute('aria-label', theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему');
     }
 
     function toggle() {
@@ -27,7 +28,7 @@
         updateIcon(next);
     }
 
-    var saved = localStorage.getItem(STORAGE_KEY) || 'dark';
+    var saved = localStorage.getItem(STORAGE_KEY) || 'light';
     applyTheme(saved);
 
     document.addEventListener('DOMContentLoaded', function () {

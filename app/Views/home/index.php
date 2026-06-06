@@ -230,8 +230,8 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                     <div class="search-dropdown js-search-dropdown" hidden></div>
                 </form>
 
-                <button class="theme-toggle-btn" data-theme-toggle aria-label="Светлая тема">
-                    <span class="theme-icon">☀</span>
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                    <span class="theme-icon" aria-hidden="true"></span>
                 </button>
 
                 <?php if ($isAuthenticated): ?>
