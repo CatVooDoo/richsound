@@ -44,6 +44,7 @@ $gradientFor = static function (int $id) use ($gradients): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Медиатека | Richsound</title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/home.css">
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
@@ -146,6 +147,9 @@ $gradientFor = static function (int $id) use ($gradients): string {
                            placeholder="Искать в Richsound..." autocomplete="off">
                     <div class="search-dropdown js-search-dropdown" hidden></div>
                 </form>
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                    <span class="theme-icon" aria-hidden="true"></span>
+                </button>
                 <div class="topbar__profile">
                     <span class="topbar__profile-name"><?= $h($user['name'] ?? '') ?></span>
                     <span class="topbar__profile-role"><?= $h($user['email'] ?? '') ?></span>

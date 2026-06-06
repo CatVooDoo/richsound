@@ -13,6 +13,7 @@ $h               = static fn(mixed $v): string => htmlspecialchars((string) $v, 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Эфиры | Richsound</title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/home.css">
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
@@ -127,6 +128,9 @@ $h               = static fn(mixed $v): string => htmlspecialchars((string) $v, 
                            placeholder="Искать в Richsound..." autocomplete="off">
                     <div class="search-dropdown js-search-dropdown" hidden></div>
                 </form>
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                    <span class="theme-icon" aria-hidden="true"></span>
+                </button>
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar__profile">
                         <span class="topbar__profile-name"><?= $h((string) ($user['name'] ?? '')) ?></span>

@@ -56,6 +56,7 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $q !== '' ? $h('Поиск: ' . $q) . ' | Richsound' : 'Поиск | Richsound' ?></title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/home.css">
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
@@ -175,6 +176,10 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
                            autofocus>
                     <div class="search-dropdown js-search-dropdown" hidden></div>
                 </form>
+
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                    <span class="theme-icon" aria-hidden="true"></span>
+                </button>
 
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar__profile">
