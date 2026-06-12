@@ -205,6 +205,7 @@ final class PlayerController extends Controller
                 'id'       => $id,
                 'title'    => (string) ($track['title'] ?? ''),
                 'artist'   => (string) ($track['author_name'] ?? ''),
+                'authorId' => (int) ($track['author_id'] ?? 0),
                 'album'    => (string) ($track['album_title'] ?? ''),
                 'audioUrl' => '/player/stream?id=' . $id,
                 'coverUrl' => $coverPath,

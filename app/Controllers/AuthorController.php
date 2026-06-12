@@ -11,7 +11,9 @@ use App\Core\RateLimiter;
 use App\Core\Request;
 use App\Core\Session;
 use App\Models\Album;
+use App\Models\Like;
 use App\Models\Listen;
+use App\Models\Playlist;
 use App\Models\Subscription;
 use App\Models\Track;
 use App\Models\User;
@@ -47,11 +49,13 @@ final class AuthorController extends Controller
         }
 
         $this->render('author/show', [
-            'user'         => $user,
-            'author'       => $author,
-            'tracks'       => $tracks,
-            'albums'       => $albums,
-            'isSubscribed' => $isSubscribed,
+            'user'          => $user,
+            'author'        => $author,
+            'tracks'        => $tracks,
+            'albums'        => $albums,
+            'isSubscribed'  => $isSubscribed,
+            'likedTrackIds' => $user !== null ? (new Like())->getTrackIdsByUser((int) $user['id']) : [],
+            'userPlaylists' => $user !== null ? (new Playlist())->findByUserId((int) $user['id']) : [],
         ]);
     }
 

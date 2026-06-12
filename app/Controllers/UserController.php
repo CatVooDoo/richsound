@@ -27,6 +27,7 @@ final class UserController extends Controller
         $this->render('user/library', [
             'user'          => $user,
             'likedTracks'   => $likedTracks,
+            'likedTrackIds' => array_map(static fn(array $t): int => (int) $t['id'], $likedTracks),
             'playlists'     => $playlists,
             'subscriptions' => $subscriptions,
             'success'       => Session::consumeFlash('success'),

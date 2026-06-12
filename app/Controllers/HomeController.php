@@ -94,13 +94,23 @@ final class HomeController extends Controller
     public function podcasts(Request $request): void
     {
         Session::start();
-        $this->render('home/podcasts', ['user' => Auth::user()]);
+        $user = Auth::user();
+        $this->render('home/podcasts', [
+            'user'          => $user,
+            'likedTrackIds' => $user !== null ? (new Like())->getTrackIdsByUser((int) $user['id']) : [],
+            'userPlaylists' => $user !== null ? (new Playlist())->findByUserId((int) $user['id']) : [],
+        ]);
     }
 
     public function broadcasts(Request $request): void
     {
         Session::start();
-        $this->render('home/broadcasts', ['user' => Auth::user()]);
+        $user = Auth::user();
+        $this->render('home/broadcasts', [
+            'user'          => $user,
+            'likedTrackIds' => $user !== null ? (new Like())->getTrackIdsByUser((int) $user['id']) : [],
+            'userPlaylists' => $user !== null ? (new Playlist())->findByUserId((int) $user['id']) : [],
+        ]);
     }
 
     public function suggest(Request $request): void

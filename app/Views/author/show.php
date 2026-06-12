@@ -31,6 +31,7 @@ foreach ($tracks as $track) {
         'id'       => $tid,
         'title'    => (string) ($track['title'] ?? ''),
         'artist'   => (string) ($track['author_name'] ?? ''),
+        'authorId' => (int) ($author['id'] ?? 0),
         'album'    => (string) ($track['album_title'] ?? ''),
         'audioUrl' => '/player/stream?id=' . $tid,
         'coverUrl' => $normalizeUrl((string) ($track['cover_path'] ?? '')),
@@ -494,15 +495,9 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
     </div>
 </footer>
 
-<audio preload="none" data-player-audio></audio>
-<script>
-window.PLAYER_CONFIG = {
-    csrfToken:    '<?= \App\Core\Csrf::token() ?>',
-    playlist:     <?= json_encode($playlist, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-    initialIndex: 0
-};
-</script>
-<script src="/assets/js/player.js"></script>
+<?php require __DIR__ . '/../partials/mobile-player.php'; ?>
+
+<?php require __DIR__ . '/../partials/player-config.php'; ?>
 <script>
 (function () {
     'use strict';
