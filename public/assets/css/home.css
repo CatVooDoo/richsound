@@ -3854,8 +3854,14 @@ body.mplayer-open { overflow: hidden; }
     border-color: rgba(20, 16, 40, 0.18);
 }
 
-/* Track cards */
+/* Track cards — the shared dark card gradient (see .hero__banner group)
+   must be replaced here too, otherwise rows stay dark with ink text. */
+[data-theme="light"] .track-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    border-color: var(--stroke);
+}
 [data-theme="light"] .track-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(34, 211, 238, 0.04));
     box-shadow: 0 8px 28px rgba(76, 60, 130, 0.12), 0 0 0 1px rgba(139, 92, 246, 0.12) inset;
 }
 [data-theme="light"] .track-actions__like,
@@ -3878,6 +3884,36 @@ body.mplayer-open { overflow: hidden; }
 }
 [data-theme="light"] .playlist-dropdown button       { color: #3f3c52; }
 [data-theme="light"] .playlist-dropdown button:hover { color: var(--text); }
+
+/* Search autocomplete dropdown (topbar, home + search pages) */
+[data-theme="light"] .search-dropdown {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 12px 40px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .search-dd__label { color: rgba(20, 16, 40, 0.4); }
+[data-theme="light"] .search-dd__item  { color: var(--text); }
+[data-theme="light"] .search-dd__item:hover,
+[data-theme="light"] .search-dd__item:active { background: var(--ink-overlay); }
+[data-theme="light"] .search-dd__meta  { color: var(--muted-soft); }
+[data-theme="light"] .search-dd__all   { color: #6d28d9; border-top-color: var(--stroke); }
+
+/* Search page — hero (empty / no results states) */
+[data-theme="light"] .search-hero__icon  { color: rgba(20, 16, 40, 0.18); }
+[data-theme="light"] .search-hero__title { color: var(--text); }
+[data-theme="light"] .search-hero__sub   { color: var(--muted); }
+
+/* Search page — author cards (avatar keeps its artwork gradient) */
+[data-theme="light"] .search-author-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--stroke);
+}
+[data-theme="light"] .search-author-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(34, 211, 238, 0.04));
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 8px 28px rgba(76, 60, 130, 0.12);
+}
+[data-theme="light"] .search-author-card__meta { color: var(--muted); }
 
 /* Empty state */
 [data-theme="light"] .empty-state {
@@ -3926,3 +3962,119 @@ body.mplayer-open { overflow: hidden; }
 [data-theme="light"] .player__slider::after { background: var(--text); }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — coming-soon pages (podcasts / broadcasts)
+   White-alpha skeletons and borders are remapped to ink-alpha;
+   accent-tinted surfaces (hero, badges, icons) work as-is.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] .coming-hero { border-color: var(--stroke); }
+
+[data-theme="light"] .coming-feat {
+    background: #ffffff;
+    border-color: var(--stroke);
+}
+[data-theme="light"] .coming-feat:hover {
+    background: #faf9fe;
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] .coming-preview__label { color: rgba(20, 16, 40, 0.35); }
+
+[data-theme="light"] .coming-ghost {
+    background: rgba(20, 16, 40, 0.035);
+    border-color: rgba(20, 16, 40, 0.06);
+}
+[data-theme="light"] .coming-ghost::after {
+    background: linear-gradient(
+        90deg,
+        transparent             0%,
+        rgba(255, 255, 255, .6) 50%,
+        transparent           100%
+    );
+    background-size: 200% 100%;
+}
+[data-theme="light"] .coming-ghost__art,
+[data-theme="light"] .coming-ghost__thumb { background: rgba(20, 16, 40, 0.08); }
+[data-theme="light"] .coming-ghost__line  { background: rgba(20, 16, 40, 0.1); }
+[data-theme="light"] .coming-ghost__viewers-text { background: rgba(20, 16, 40, 0.08); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — media library page
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] .medialib__add-btn       { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__add-btn:hover { background: rgba(20, 16, 40, 0.16); }
+
+[data-theme="light"] .medialib__chip       { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__chip:hover { background: rgba(20, 16, 40, 0.16); }
+[data-theme="light"] .medialib__chip--active {
+    background: var(--text);
+    color: #ffffff;
+}
+
+[data-theme="light"] .medialib__search-icon { color: rgba(20, 16, 40, 0.4); }
+[data-theme="light"] .medialib__search {
+    background: var(--ink-overlay);
+}
+[data-theme="light"] .medialib__search:focus { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__search::placeholder { color: var(--muted-soft); }
+
+[data-theme="light"] .medialib__create-form input[type="text"],
+[data-theme="light"] .medialib__create-form select { background: var(--ink-overlay); }
+[data-theme="light"] .medialib__create-form input[type="text"]:focus { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__create-form select option { background: #ffffff; }
+
+[data-theme="light"] .medialib__row:hover { background: var(--ink-overlay); }
+
+/* Art placeholder; gradient variants stand in for artwork and stay rich */
+[data-theme="light"] .medialib__art {
+    background-color: var(--ink-overlay-2);
+    color: rgba(20, 16, 40, 0.45);
+}
+
+[data-theme="light"] .medialib__sub { color: var(--muted); }
+
+[data-theme="light"] .medialib__badge {
+    background: var(--ink-overlay-2);
+    color: var(--muted);
+}
+[data-theme="light"] .medialib__badge--private {
+    background: rgba(244, 114, 182, 0.14);
+    color: #be185d;
+}
+
+[data-theme="light"] .medialib__dot-btn { color: var(--muted); }
+[data-theme="light"] .medialib__dot-btn:hover {
+    background: var(--ink-overlay-2);
+    color: var(--text);
+}
+
+[data-theme="light"] .medialib__ctx-menu {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 8px 32px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .medialib__ctx-menu button:hover,
+[data-theme="light"] .medialib__ctx-menu a:hover { background: var(--ink-overlay); }
+[data-theme="light"] .medialib__ctx-menu button.danger       { color: #be123c; }
+[data-theme="light"] .medialib__ctx-menu button.danger:hover { background: rgba(190, 18, 60, 0.08); }
+
+[data-theme="light"] .liked-row { border-bottom-color: rgba(20, 16, 40, 0.06); }
+[data-theme="light"] .liked-row:hover { background: var(--ink-overlay); }
+[data-theme="light"] .liked-row__cover { background-color: var(--ink-overlay-2); }
+[data-theme="light"] .liked-row__meta  { color: var(--muted); }
+
+[data-theme="light"] .medialib__empty { color: var(--muted); }
+
+[data-theme="light"] .lib-alert--success {
+    background: rgba(52, 211, 153, 0.12);
+    color: #047857;
+    border-color: rgba(52, 211, 153, 0.3);
+}
+[data-theme="light"] .lib-alert--error {
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
+    border-color: rgba(244, 114, 182, 0.3);
+}

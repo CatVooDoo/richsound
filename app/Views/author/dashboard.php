@@ -21,6 +21,7 @@ $formatDuration = static function (mixed $seconds): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кабинет автора | Richsound</title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/author.css">
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
@@ -36,6 +37,9 @@ $formatDuration = static function (mixed $seconds): string {
             <p class="author-header__meta"><?= $h($author['email'] ?? '') ?></p>
         </div>
         <div class="author-header__actions">
+            <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему" type="button">
+                <span class="theme-icon" aria-hidden="true"></span>
+            </button>
             <a class="author-button author-button--ghost" href="/">На главную</a>
             <form action="/logout" method="post">
                 <?= \App\Core\Csrf::field() ?>
@@ -421,7 +425,7 @@ $formatDuration = static function (mixed $seconds): string {
             </div>
         </div>
 
-        <div id="analytics-loading" style="padding:40px;text-align:center;color:rgba(255,255,255,.4);">Загрузка данных...</div>
+        <div id="analytics-loading" style="padding:40px;text-align:center;color:var(--author-muted);">Загрузка данных...</div>
 
         <div id="analytics-content" hidden>
             <div class="analytics-charts">
@@ -879,14 +883,23 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
     var chartSubs       = null;
     var currentPeriod   = 7;
 
-    var chartOptions = {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#9896a8', maxTicksLimit: 10 } },
-            y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#9896a8', stepSize: 1 }, beginAtZero: true }
-        }
-    };
+    var lastData = null;
+
+    /* Grid/tick colours depend on the active theme, so options are
+       computed at render time (charts are re-rendered on toggle). */
+    function chartOptions() {
+        var light = document.documentElement.getAttribute('data-theme') === 'light';
+        var grid  = light ? 'rgba(20,16,40,0.07)' : 'rgba(255,255,255,0.06)';
+        var ticks = light ? '#5c5870' : '#9896a8';
+        return {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: grid }, ticks: { color: ticks, maxTicksLimit: 10 } },
+                y: { grid: { color: grid }, ticks: { color: ticks, stepSize: 1 }, beginAtZero: true }
+            }
+        };
+    }
 
     function escHtml(str) {
         return String(str)
@@ -925,23 +938,24 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
     }
 
     function renderAnalytics(data) {
+        lastData = data;
         var ctxL = document.getElementById('chart-listens');
         var ctxU = document.getElementById('chart-unique');
         var ctxS = document.getElementById('chart-subscribers');
 
         if (ctxL) {
             if (chartListens) { chartListens.destroy(); }
-            chartListens = new Chart(ctxL.getContext('2d'), { type: 'line', data: buildChartData(data.listens || []), options: chartOptions });
+            chartListens = new Chart(ctxL.getContext('2d'), { type: 'line', data: buildChartData(data.listens || []), options: chartOptions() });
         }
 
         if (ctxU) {
             if (chartUnique) { chartUnique.destroy(); }
-            chartUnique = new Chart(ctxU.getContext('2d'), { type: 'line', data: buildChartDataColored(data.uniqueListeners || [], '#22d3ee'), options: chartOptions });
+            chartUnique = new Chart(ctxU.getContext('2d'), { type: 'line', data: buildChartDataColored(data.uniqueListeners || [], '#22d3ee'), options: chartOptions() });
         }
 
         if (ctxS) {
             if (chartSubs) { chartSubs.destroy(); }
-            chartSubs = new Chart(ctxS.getContext('2d'), { type: 'line', data: buildChartData(data.subscribers || []), options: chartOptions });
+            chartSubs = new Chart(ctxS.getContext('2d'), { type: 'line', data: buildChartData(data.subscribers || []), options: chartOptions() });
         }
 
         var completionEl = document.getElementById('analytics-completion');
@@ -968,7 +982,7 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
             });
 
             if ((data.topTracks || []).length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,.3);padding:20px">Данных пока нет</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--author-muted);padding:20px">Данных пока нет</td></tr>';
             }
         }
     }
@@ -1011,6 +1025,18 @@ window.PLAYER_CONFIG = { csrfToken: '<?= \App\Core\Csrf::token() ?>', playlist: 
             loadAnalytics(parseInt(btn.dataset.period, 10));
         });
     });
+
+    /* Перерисовать графики под новую палитру после смены темы.
+       setTimeout: наш обработчик зарегистрирован раньше, чем toggle
+       в theme.js, поэтому ждём, пока тот переключит data-theme. */
+    var themeToggle = document.querySelector('[data-theme-toggle]');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            setTimeout(function () {
+                if (lastData) { renderAnalytics(lastData); }
+            }, 0);
+        });
+    }
 }());
 
 /* ── Avatar preview ────────────────────────────────────── */
