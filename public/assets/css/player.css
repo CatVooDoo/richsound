@@ -426,3 +426,57 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — palette matches home.css [data-theme="light"]
+   (white surface, near-black ink #16131f, mid ink #6b6878).
+   Album art placeholder keeps its artwork gradient by design.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] .player-bar {
+    background: #ffffff;
+    border-top-color: rgba(20, 16, 40, 0.08);
+    color: #16131f;
+}
+
+[data-theme="light"] .player-bar .player__title  { color: #16131f; }
+[data-theme="light"] .player-bar .player__artist { color: #6b6878; }
+[data-theme="light"] .player-bar .player__time   { color: #6b6878; }
+
+[data-theme="light"] .player-bar .player__btn        { color: #6b6878; }
+[data-theme="light"] .player-bar .player__btn:hover  { color: #16131f; }
+[data-theme="light"] .player-bar .player__btn:focus-visible {
+    box-shadow: 0 0 0 2px rgba(20, 16, 40, 0.3);
+    color: #16131f;
+}
+[data-theme="light"] .player-bar .player__btn--heart       { color: #8b5cf6; }
+[data-theme="light"] .player-bar .player__btn--heart:hover { color: #7c3aed; }
+
+[data-theme="light"] .player-bar .player__btn--play {
+    background: #16131f;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(76, 60, 130, 0.25);
+}
+[data-theme="light"] .player-bar .player__btn--play:hover {
+    background: #2a2640;
+    color: #ffffff;
+    box-shadow: 0 6px 28px rgba(76, 60, 130, 0.35);
+}
+
+[data-theme="light"] .player-bar .player__slider-rail { background: rgba(20, 16, 40, 0.14); }
+[data-theme="light"] .player-bar .player__slider-fill { background: #6b6878; }
+[data-theme="light"] .player-bar .player__slider::after { background: #16131f; }
+
+[data-theme="light"] .player-queue {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 20px 48px rgba(76, 60, 130, 0.18);
+}
+[data-theme="light"] .player-queue__header {
+    color: rgba(20, 16, 40, 0.45);
+    border-bottom-color: rgba(20, 16, 40, 0.08);
+}
+[data-theme="light"] .player-queue__item:hover,
+[data-theme="light"] .player-queue__item:active { background: rgba(20, 16, 40, 0.05); }
+[data-theme="light"] .player-queue__title  { color: #16131f; }
+[data-theme="light"] .player-queue__artist { color: rgba(20, 16, 40, 0.5); }

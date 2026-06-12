@@ -27,6 +27,41 @@
     --transition:     0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — palette per theme.png (lavender-white surface,
+   near-black ink, violet→cyan accent kept from the dark theme).
+   All overrides are isolated under [data-theme="light"] so the
+   dark theme remains the untouched default.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] {
+    --bg:            #f1eff8;
+    --panel:         #ffffff;
+    --panel-soft:    #f7f5fd;
+    --stroke:        rgba(20, 16, 40, 0.08);
+    --stroke-strong: rgba(20, 16, 40, 0.14);
+    --text:          #16131f;
+    --muted:         #5c5870;
+    --muted-soft:    #8b8799;
+    --accent-glow:   rgba(139, 92, 246, 0.22);
+    --accent-2-glow: rgba(34, 211, 238, 0.16);
+    --shadow-card:   0 8px 32px rgba(76, 60, 130, 0.10);
+    --shadow-deep:   0 24px 80px rgba(76, 60, 130, 0.16);
+
+    /* Semantic helpers used only by the light overrides below */
+    --ink-overlay:   rgba(20, 16, 40, 0.05);
+    --ink-overlay-2: rgba(20, 16, 40, 0.09);
+}
+
+[data-theme="light"] body {
+    background:
+        radial-gradient(ellipse 80% 50% at -10% -10%, rgba(139, 92, 246, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 110% 0%, rgba(34, 211, 238, 0.07) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 50% at 50% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #f4f2fb 0%, #ece9f6 100%);
+    background-attachment: fixed;
+}
+
 /* ── Reset ──────────────────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -3682,3 +3717,364 @@ body.mplayer-open { overflow: hidden; }
 }
 
 } /* end @media (max-width: 760px) — mobile player */
+
+/* ── Theme toggle button ────────────────────────────────────────── */
+
+.theme-toggle-btn {
+    background: var(--panel);
+    border: 1px solid var(--stroke-strong);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px 10px;
+    transition: var(--transition);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Icon rendered via CSS so it matches the theme on first paint (no flash);
+   theme.js only keeps the aria-label in sync. */
+.theme-icon::before { content: '\263C'; } /* ☼ sun — dark theme active */
+[data-theme="light"] .theme-icon::before { content: '\263D'; } /* ☽ moon — light theme active */
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — component overrides (home page)
+   Targets the hardcoded dark-on-light colours that variables alone
+   can't reach. Scoped entirely under [data-theme="light"].
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.35); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+
+/* Dashboard shell + sidebar */
+[data-theme="light"] .dashboard {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: var(--stroke);
+    box-shadow: var(--shadow-deep), 0 0 0 1px rgba(139, 92, 246, 0.05) inset;
+}
+
+/* Sidebar chrome — desktop only; on mobile the sidebar collapses into
+   the dark bottom-nav bar, which must stay dark. */
+@media (min-width: 761px) {
+    [data-theme="light"] .dashboard__sidebar {
+        background:
+            linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
+            #faf9fe;
+        border-right-color: var(--stroke);
+    }
+
+    [data-theme="light"] .sidebar__label { color: rgba(20, 16, 40, 0.35); }
+    [data-theme="light"] .sidebar__link  { color: #4a4760; }
+    [data-theme="light"] .sidebar__link:hover {
+        background: var(--ink-overlay);
+        color: var(--text);
+    }
+    [data-theme="light"] .sidebar__link--active {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.14) 0%, rgba(34, 211, 238, 0.07) 100%);
+        border-color: rgba(139, 92, 246, 0.3);
+        color: var(--text);
+        box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.14) inset, 0 4px 16px rgba(139, 92, 246, 0.12);
+    }
+}
+
+/* Topbar / tabs */
+[data-theme="light"] .tabs__item            { color: #6b6878; }
+[data-theme="light"] .tabs__item:hover       { color: rgba(20, 16, 40, 0.85); }
+[data-theme="light"] .tabs__item--active     { color: var(--text); }
+[data-theme="light"] .tabs__item:focus-visible { color: var(--text); }
+[data-theme="light"] .topbar__profile-name   { color: var(--text); }
+[data-theme="light"] .topbar__auth-link      { color: #4a4760; }
+[data-theme="light"] .topbar__auth-link:hover {
+    background: var(--ink-overlay);
+    border-color: rgba(20, 16, 40, 0.18);
+    color: var(--text);
+}
+[data-theme="light"] .topbar__icon-button       { color: #6b6878; }
+[data-theme="light"] .topbar__icon-button:hover {
+    background: var(--ink-overlay);
+    color: var(--text);
+}
+
+/* Search field */
+[data-theme="light"] .search { background: var(--ink-overlay); }
+[data-theme="light"] .search:focus-within { background: rgba(139, 92, 246, 0.07); }
+
+/* Alerts */
+[data-theme="light"] .alert--success {
+    color: #047857;
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+[data-theme="light"] .alert--error {
+    color: #be185d;
+    background: rgba(244, 114, 182, 0.12);
+    border-color: rgba(244, 114, 182, 0.3);
+}
+
+/* Shared card surface — hero banner, mix card, player.
+   Album art / track covers are intentionally excluded: they stand
+   in for real cover artwork and stay rich regardless of theme. */
+[data-theme="light"] .hero__banner,
+[data-theme="light"] .mix-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    border-color: var(--stroke);
+}
+
+/* Hero — replace the dark readability veils with light tints */
+[data-theme="light"] .hero__banner::before {
+    background:
+        radial-gradient(circle at 30% 38%, rgba(139, 92, 246, 0.16), transparent 38%),
+        radial-gradient(circle at 75% 28%, rgba(34, 211, 238, 0.12), transparent 34%);
+}
+[data-theme="light"] .hero__banner::after { opacity: 0.22; }
+[data-theme="light"] .hero__description   { color: var(--muted); }
+
+/* Secondary text — the hardcoded mid-greys read low-contrast on a light
+   surface, so map them to the theme's muted ink. */
+[data-theme="light"] .album-card__artist,
+[data-theme="light"] .album-card__stats,
+[data-theme="light"] .track-card__artist,
+[data-theme="light"] .track-card__meta,
+[data-theme="light"] .mix-card__description { color: var(--muted); }
+
+/* Buttons */
+[data-theme="light"] .button--secondary {
+    background: var(--ink-overlay);
+    color: var(--text);
+}
+[data-theme="light"] .button--secondary:hover {
+    background: var(--ink-overlay-2);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+
+/* Track cards — the shared dark card gradient (see .hero__banner group)
+   must be replaced here too, otherwise rows stay dark with ink text. */
+[data-theme="light"] .track-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    border-color: var(--stroke);
+}
+[data-theme="light"] .track-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(34, 211, 238, 0.04));
+    box-shadow: 0 8px 28px rgba(76, 60, 130, 0.12), 0 0 0 1px rgba(139, 92, 246, 0.12) inset;
+}
+[data-theme="light"] .track-actions__like,
+[data-theme="light"] .track-actions__add {
+    background: var(--ink-overlay);
+    border-color: rgba(20, 16, 40, 0.1);
+}
+[data-theme="light"] .track-actions__like:hover,
+[data-theme="light"] .track-actions__add:hover {
+    background: var(--ink-overlay-2);
+    color: var(--text);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+
+/* Playlist dropdown */
+[data-theme="light"] .playlist-dropdown {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 20px 48px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.08);
+}
+[data-theme="light"] .playlist-dropdown button       { color: #3f3c52; }
+[data-theme="light"] .playlist-dropdown button:hover { color: var(--text); }
+
+/* Search autocomplete dropdown (topbar, home + search pages) */
+[data-theme="light"] .search-dropdown {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 12px 40px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .search-dd__label { color: rgba(20, 16, 40, 0.4); }
+[data-theme="light"] .search-dd__item  { color: var(--text); }
+[data-theme="light"] .search-dd__item:hover,
+[data-theme="light"] .search-dd__item:active { background: var(--ink-overlay); }
+[data-theme="light"] .search-dd__meta  { color: var(--muted-soft); }
+[data-theme="light"] .search-dd__all   { color: #6d28d9; border-top-color: var(--stroke); }
+
+/* Search page — hero (empty / no results states) */
+[data-theme="light"] .search-hero__icon  { color: rgba(20, 16, 40, 0.18); }
+[data-theme="light"] .search-hero__title { color: var(--text); }
+[data-theme="light"] .search-hero__sub   { color: var(--muted); }
+
+/* Search page — author cards (avatar keeps its artwork gradient) */
+[data-theme="light"] .search-author-card {
+    background: linear-gradient(180deg, #ffffff, #f6f4fd);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--stroke);
+}
+[data-theme="light"] .search-author-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(34, 211, 238, 0.04));
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 8px 28px rgba(76, 60, 130, 0.12);
+}
+[data-theme="light"] .search-author-card__meta { color: var(--muted); }
+
+/* Empty state */
+[data-theme="light"] .empty-state {
+    border-color: rgba(20, 16, 40, 0.12);
+    background: rgba(20, 16, 40, 0.02);
+    color: var(--muted);
+}
+
+/* Role cards (guest landing) */
+[data-theme="light"] .role-card:hover { box-shadow: 0 8px 40px rgba(76, 60, 130, 0.14); }
+[data-theme="light"] .role-card__icon { background: var(--ink-overlay); }
+[data-theme="light"] .perk--ok        { color: #3f3c52; }
+[data-theme="light"] .role-card__cta  { background: var(--ink-overlay); }
+[data-theme="light"] .role-card__cta:hover {
+    background: var(--ink-overlay-2);
+    border-color: rgba(20, 16, 40, 0.18);
+}
+[data-theme="light"] .role-card__cta--accent       { color: #6d28d9; }
+[data-theme="light"] .role-card__cta--accent:hover { color: #5b21b6; }
+
+/* Player bar — desktop only; on mobile this footer becomes the dark
+   mini-player and the .player__* classes are reused by it, so keep them
+   dark there (the full-screen mobile player is never themed light). */
+@media (min-width: 761px) {
+[data-theme="light"] .dashboard__player {
+    background: #ffffff;
+    border-top-color: rgba(20, 16, 40, 0.08);
+}
+[data-theme="light"] .player__title { color: var(--text); }
+[data-theme="light"] .player__artist,
+[data-theme="light"] .player__time   { color: #6b6878; }
+[data-theme="light"] .player__btn        { color: #6b6878; }
+[data-theme="light"] .player__btn:hover  { color: var(--text); }
+[data-theme="light"] .player__btn--play {
+    background: var(--text);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(76, 60, 130, 0.25);
+}
+[data-theme="light"] .player__btn--play:hover {
+    background: #2a2640;
+    color: #fff;
+    box-shadow: 0 6px 28px rgba(76, 60, 130, 0.35);
+}
+[data-theme="light"] .player__slider-rail { background: rgba(20, 16, 40, 0.14); }
+[data-theme="light"] .player__slider-fill { background: #6b6878; }
+[data-theme="light"] .player__slider::after { background: var(--text); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — coming-soon pages (podcasts / broadcasts)
+   White-alpha skeletons and borders are remapped to ink-alpha;
+   accent-tinted surfaces (hero, badges, icons) work as-is.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] .coming-hero { border-color: var(--stroke); }
+
+[data-theme="light"] .coming-feat {
+    background: #ffffff;
+    border-color: var(--stroke);
+}
+[data-theme="light"] .coming-feat:hover {
+    background: #faf9fe;
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] .coming-preview__label { color: rgba(20, 16, 40, 0.35); }
+
+[data-theme="light"] .coming-ghost {
+    background: rgba(20, 16, 40, 0.035);
+    border-color: rgba(20, 16, 40, 0.06);
+}
+[data-theme="light"] .coming-ghost::after {
+    background: linear-gradient(
+        90deg,
+        transparent             0%,
+        rgba(255, 255, 255, .6) 50%,
+        transparent           100%
+    );
+    background-size: 200% 100%;
+}
+[data-theme="light"] .coming-ghost__art,
+[data-theme="light"] .coming-ghost__thumb { background: rgba(20, 16, 40, 0.08); }
+[data-theme="light"] .coming-ghost__line  { background: rgba(20, 16, 40, 0.1); }
+[data-theme="light"] .coming-ghost__viewers-text { background: rgba(20, 16, 40, 0.08); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — media library page
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] .medialib__add-btn       { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__add-btn:hover { background: rgba(20, 16, 40, 0.16); }
+
+[data-theme="light"] .medialib__chip       { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__chip:hover { background: rgba(20, 16, 40, 0.16); }
+[data-theme="light"] .medialib__chip--active {
+    background: var(--text);
+    color: #ffffff;
+}
+
+[data-theme="light"] .medialib__search-icon { color: rgba(20, 16, 40, 0.4); }
+[data-theme="light"] .medialib__search {
+    background: var(--ink-overlay);
+}
+[data-theme="light"] .medialib__search:focus { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__search::placeholder { color: var(--muted-soft); }
+
+[data-theme="light"] .medialib__create-form input[type="text"],
+[data-theme="light"] .medialib__create-form select { background: var(--ink-overlay); }
+[data-theme="light"] .medialib__create-form input[type="text"]:focus { background: var(--ink-overlay-2); }
+[data-theme="light"] .medialib__create-form select option { background: #ffffff; }
+
+[data-theme="light"] .medialib__row:hover { background: var(--ink-overlay); }
+
+/* Art placeholder; gradient variants stand in for artwork and stay rich */
+[data-theme="light"] .medialib__art {
+    background-color: var(--ink-overlay-2);
+    color: rgba(20, 16, 40, 0.45);
+}
+
+[data-theme="light"] .medialib__sub { color: var(--muted); }
+
+[data-theme="light"] .medialib__badge {
+    background: var(--ink-overlay-2);
+    color: var(--muted);
+}
+[data-theme="light"] .medialib__badge--private {
+    background: rgba(244, 114, 182, 0.14);
+    color: #be185d;
+}
+
+[data-theme="light"] .medialib__dot-btn { color: var(--muted); }
+[data-theme="light"] .medialib__dot-btn:hover {
+    background: var(--ink-overlay-2);
+    color: var(--text);
+}
+
+[data-theme="light"] .medialib__ctx-menu {
+    background: #ffffff;
+    border-color: rgba(20, 16, 40, 0.1);
+    box-shadow: 0 8px 32px rgba(76, 60, 130, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .medialib__ctx-menu button:hover,
+[data-theme="light"] .medialib__ctx-menu a:hover { background: var(--ink-overlay); }
+[data-theme="light"] .medialib__ctx-menu button.danger       { color: #be123c; }
+[data-theme="light"] .medialib__ctx-menu button.danger:hover { background: rgba(190, 18, 60, 0.08); }
+
+[data-theme="light"] .liked-row { border-bottom-color: rgba(20, 16, 40, 0.06); }
+[data-theme="light"] .liked-row:hover { background: var(--ink-overlay); }
+[data-theme="light"] .liked-row__cover { background-color: var(--ink-overlay-2); }
+[data-theme="light"] .liked-row__meta  { color: var(--muted); }
+
+[data-theme="light"] .medialib__empty { color: var(--muted); }
+
+[data-theme="light"] .lib-alert--success {
+    background: rgba(52, 211, 153, 0.12);
+    color: #047857;
+    border-color: rgba(52, 211, 153, 0.3);
+}
+[data-theme="light"] .lib-alert--error {
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
+    border-color: rgba(244, 114, 182, 0.3);
+}

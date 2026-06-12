@@ -50,6 +50,7 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $h($authorName) ?> | Richsound</title>
+    <script src="/assets/js/theme.js"></script>
     <link rel="stylesheet" href="/assets/css/home.css">
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
@@ -80,11 +81,15 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
 
         .ap-inner { max-width: 1000px; margin: 0 auto; padding: 0 32px; }
 
-        /* ── back link ──────────────────────────────────────── */
+        /* ── top line: back link + theme toggle ─────────────── */
+        .ap-topline {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 24px;
+        }
         .ap-back {
             display: inline-flex; align-items: center; gap: 6px;
             color: rgba(255,255,255,.5); font-size: 13px; text-decoration: none;
-            padding: 24px 0 0; transition: color .15s;
+            transition: color .15s;
         }
         .ap-back:hover { color: #fff; }
 
@@ -248,16 +253,84 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
             .ap-track { grid-template-columns: 28px 44px 1fr auto; }
             .ap-track__likes { display: none; }
         }
+
+        /* ── light theme ────────────────────────────────────────
+           Palette matches home.css [data-theme="light"]: lavender-
+           white surface, near-black ink. Avatar and cover gradients
+           stand in for artwork and keep their colours. */
+        [data-theme="light"] .ap-wrap {
+            background: #f1eff8;
+            color: #16131f;
+        }
+        [data-theme="light"] .ap-banner {
+            background: linear-gradient(180deg, #e9e4f7 0%, #f1eff8 100%);
+        }
+        [data-theme="light"] .ap-banner::before {
+            background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(139,92,246,.14) 0%, transparent 70%);
+        }
+
+        [data-theme="light"] .ap-back { color: rgba(20,16,40,.5); }
+        [data-theme="light"] .ap-back:hover,
+        [data-theme="light"] .ap-back:focus-visible { color: #16131f; }
+
+        [data-theme="light"] .ap-hero-label { color: rgba(20,16,40,.45); }
+        [data-theme="light"] .ap-hero-name  { color: #16131f; }
+        [data-theme="light"] .ap-hero-stats { color: rgba(20,16,40,.55); }
+        [data-theme="light"] .ap-hero-stats span strong { color: #16131f; }
+        [data-theme="light"] .ap-hero-bio   { color: rgba(20,16,40,.55); }
+
+        [data-theme="light"] .btn-subscribe {
+            border-color: rgba(20,16,40,.28); color: #16131f;
+        }
+        [data-theme="light"] .btn-subscribe:hover { border-color: rgba(20,16,40,.8); background: rgba(20,16,40,.05); }
+        [data-theme="light"] .btn-subscribe:active { background: rgba(20,16,40,.03); }
+        [data-theme="light"] .btn-subscribe:focus-visible { box-shadow: 0 0 0 2px rgba(20,16,40,.3); }
+        [data-theme="light"] .btn-subscribe.subscribed {
+            border-color: rgba(20,16,40,.14); color: rgba(20,16,40,.55);
+        }
+        [data-theme="light"] .btn-subscribe.subscribed:hover { border-color: rgba(20,16,40,.7); color: #16131f; }
+
+        [data-theme="light"] .ap-login-hint { color: rgba(20,16,40,.45); }
+        [data-theme="light"] .ap-login-hint a { color: #6d28d9; }
+        [data-theme="light"] .ap-login-hint a:hover { color: #5b21b6; }
+
+        [data-theme="light"] .ap-section-head { border-bottom-color: rgba(20,16,40,.08); }
+        [data-theme="light"] .ap-section-head h2 { color: #16131f; }
+        [data-theme="light"] .ap-section-count { color: rgba(20,16,40,.4); }
+
+        [data-theme="light"] .ap-track:hover { background: rgba(20,16,40,.05); }
+        [data-theme="light"] .ap-track:focus-visible { background: rgba(20,16,40,.06); }
+        [data-theme="light"] .ap-track__num   { color: rgba(20,16,40,.45); }
+        [data-theme="light"] .ap-track__play  { color: #16131f; }
+        [data-theme="light"] .ap-track__title { color: #16131f; }
+        [data-theme="light"] .ap-track__sub   { color: rgba(20,16,40,.45); }
+        [data-theme="light"] .ap-track__dur   { color: rgba(20,16,40,.45); }
+        [data-theme="light"] .ap-track__likes { color: rgba(20,16,40,.35); }
+
+        [data-theme="light"] .ap-album {
+            background: #ffffff;
+            box-shadow: 0 0 0 1px rgba(20,16,40,.08);
+        }
+        [data-theme="light"] .ap-album:hover { background: #faf9fe; box-shadow: 0 0 0 1px rgba(139,92,246,.25), 0 8px 28px rgba(76,60,130,.12); }
+        [data-theme="light"] .ap-album__title { color: #16131f; }
+        [data-theme="light"] .ap-album__meta  { color: rgba(20,16,40,.45); }
+
+        [data-theme="light"] .ap-empty { color: rgba(20,16,40,.45); }
     </style>
 </head>
 <body class="ap-wrap">
 
 <div class="ap-banner">
     <div class="ap-inner">
-        <a class="ap-back" href="/">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            На главную
-        </a>
+        <div class="ap-topline">
+            <a class="ap-back" href="/">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                На главную
+            </a>
+            <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                <span class="theme-icon" aria-hidden="true"></span>
+            </button>
+        </div>
 
         <div class="ap-hero">
             <div class="ap-avatar"<?= !empty($author['avatar']) ? ' style="background-image:url(\'' . $h((string) $author['avatar']) . '\')"' : '' ?>></div>

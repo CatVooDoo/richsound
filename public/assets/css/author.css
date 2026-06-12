@@ -1256,3 +1256,101 @@ button, input, select, textarea { font: inherit; }
     .upload-meta { grid-template-columns: 1fr; }
     .upload-meta .cover-picker { width: 100%; height: 160px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme — palette matches home.css [data-theme="light"]
+   (lavender-white surface, near-black ink). Most components pick
+   it up via the --author-* variables; below the vars are the few
+   hardcoded dark spots. Artwork gradients (covers, avatar) stay.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] {
+    --author-bg:             #f1eff8;
+    --author-surface:        rgba(255, 255, 255, 0.92);
+    --author-surface-strong: #ffffff;
+    --author-text:           #16131f;
+    --author-muted:          #5c5870;
+    --author-border:         rgba(20, 16, 40, 0.08);
+    --author-border-strong:  rgba(20, 16, 40, 0.14);
+    --author-primary-dark:   #6d28d9;
+    --author-shadow:         0 24px 60px rgba(76, 60, 130, 0.12);
+    --author-glow:           rgba(139, 92, 246, 0.22);
+}
+
+[data-theme="light"] body.author-page {
+    background:
+        radial-gradient(ellipse 70% 50% at 100% -10%, rgba(139, 92, 246, 0.10), transparent 50%),
+        radial-gradient(ellipse 50% 40% at -5% 100%, rgba(34, 211, 238, 0.07), transparent 45%),
+        linear-gradient(180deg, #f4f2fb 0%, #ece9f6 100%);
+    background-attachment: fixed;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.35); }
+
+[data-theme="light"] .author-header h1 {
+    background: linear-gradient(120deg, #16131f 30%, #6d28d9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+[data-theme="light"] .author-alert--success { color: #047857; border-color: rgba(52, 211, 153, 0.3); }
+[data-theme="light"] .author-alert--error   { color: #be185d; border-color: rgba(244, 114, 182, 0.3); }
+
+[data-theme="light"] .author-summary-card:hover {
+    box-shadow: 0 8px 28px rgba(76, 60, 130, 0.14), 0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+[data-theme="light"] .author-tabs__item { background: rgba(20, 16, 40, 0.04); }
+[data-theme="light"] .author-tabs__item--active { color: var(--author-text); }
+
+[data-theme="light"] .author-track-item,
+[data-theme="light"] .author-album-item { background: rgba(255, 255, 255, 0.7); }
+[data-theme="light"] .author-track-item:hover,
+[data-theme="light"] .author-album-item:hover { background: rgba(139, 92, 246, 0.08); }
+
+[data-theme="light"] .author-button--danger { color: #be185d; }
+
+[data-theme="light"] .upload-field input,
+[data-theme="light"] .upload-field select,
+[data-theme="light"] .author-modal__form input,
+[data-theme="light"] .author-modal__form select { background: rgba(20, 16, 40, 0.04); }
+
+[data-theme="light"] .upload-field select option,
+[data-theme="light"] .author-modal__form select option { background: #ffffff; }
+
+[data-theme="light"] .author-modal__overlay { background: rgba(20, 16, 40, 0.4); }
+[data-theme="light"] .author-modal__box {
+    background: #ffffff;
+    box-shadow: 0 40px 100px rgba(76, 60, 130, 0.3), 0 0 0 1px rgba(139, 92, 246, 0.08) inset;
+}
+[data-theme="light"] .author-modal__close { background: rgba(20, 16, 40, 0.06); }
+[data-theme="light"] .author-modal__close:hover { background: rgba(244, 114, 182, 0.15); color: #be185d; }
+
+[data-theme="light"] .analytics-chart-block,
+[data-theme="light"] .analytics-stat-card,
+[data-theme="light"] .analytics-top-tracks { background: rgba(255, 255, 255, 0.7); }
+
+[data-theme="light"] .profile-info-form textarea { background: rgba(20, 16, 40, 0.04); }
+
+/* ── Theme toggle button (home.css is not loaded here) ──────────── */
+
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--author-border-strong);
+    border-radius: 14px;
+    color: var(--author-muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px 12px;
+    transition: color var(--transition), border-color var(--transition);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--author-primary);
+    border-color: var(--author-primary);
+}
+
+.theme-icon::before { content: '\263C'; } /* ☼ sun — dark theme active */
+[data-theme="light"] .theme-icon::before { content: '\263D'; } /* ☽ moon — light theme active */
