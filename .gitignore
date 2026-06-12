@@ -3,9 +3,19 @@
 .AppleDouble
 .LSOverride
 
+# Windows
+Thumbs.db
+desktop.ini
+
 # Загруженные файлы
 public/uploads/*
-!public/uploads/.gitkeep
+!public/uploads/tracks
+!public/uploads/covers
+!public/uploads/avatars
+public/uploads/tracks/*
+public/uploads/covers/*
+public/uploads/avatars/*
+!public/uploads/*/.gitkeep
 
 # Логи
 *.log
@@ -25,6 +35,13 @@ public/uploads/*
 .env
 .env.local
 .env.*.local
+
+# PHP-инструменты (кеши тестов/анализаторов, профили Xdebug)
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+.phpstan/
+cachegrind.out.*
 
 # Composer (если будет)
 /vendor/
