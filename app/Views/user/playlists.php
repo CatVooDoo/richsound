@@ -224,14 +224,8 @@ $formatDuration = static function (mixed $s): string {
     </footer>
 </div>
 
-<audio preload="none" data-player-audio></audio>
-<script>
-window.PLAYER_CONFIG = {
-    csrfToken: '<?= \App\Core\Csrf::token() ?>',
-    playlist:  <?= json_encode($playerPlaylist, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
-};
-</script>
-<script src="/assets/js/player.js"></script>
+<?php require __DIR__ . '/../partials/mobile-player.php'; ?>
+<?php require __DIR__ . '/../partials/player-config.php'; ?>
 <script>
 (function () {
     'use strict';

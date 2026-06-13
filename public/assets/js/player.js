@@ -1,61 +1,63 @@
 /* Richsound player — single source of truth for playback state.
-   Reads window.PLAYER_CONFIG, persists state to localStorage.
+
+   Turbo Drive aware: the page <body> is swapped on navigation while the
+   <audio data-turbo-permanent> node and this JS context survive. The first
+   execution boots the core (state + audio events, bound once); Turbo
+   re-executes body scripts on every visit, so subsequent executions only
+   call _rebind(): re-query the fresh DOM, re-attach handlers, repaint.
+
+   Queue semantics (Spotify-like): the active queue lives in memory and
+   survives navigation. Each page's window.PLAYER_CONFIG is that page's
+   context playlist — clicking a track on a page replaces the queue with
+   the page context and plays the clicked index.
 
    Public API (window.RichsoundPlayer):
-     getPlaylist()      → array of tracks
+     getPlaylist()      → active queue
      getCurrentIndex()  → int
-     play(index)        → load + play track by playlist index
+     play(index)        → play track by queue index
+     setQueue(tracks)   → replace the queue
      toggleLike()       → like/unlike the current track (auth only)
      isLiked(trackId)   → bool
+     getUserPlaylists() → current page's user playlists
+     addToPlaylist(id)  → add current track to a playlist
 
-   Events (dispatched on [data-player-root], bubbling):
+   Events (dispatched on document, bubbling not needed):
      rs:trackchange  detail: { index, track }
      rs:modechange   detail: { shuffle, repeat }   repeat: 'off'|'all'|'one'
      rs:likechange   detail: { trackId, liked, count } */
 (function () {
     'use strict';
 
-    var cfg          = window.PLAYER_CONFIG || {};
-    var playlist     = Array.isArray(cfg.playlist) ? cfg.playlist : [];
-    var initialIndex = typeof cfg.initialIndex === 'number' ? cfg.initialIndex : 0;
-    var fetchUrl     = typeof cfg.fetchUrl === 'string' ? cfg.fetchUrl : null;
-    var csrfToken    = typeof cfg.csrfToken === 'string' ? cfg.csrfToken : '';
-    var isAuth       = cfg.isAuth === true;
-    var likedIds     = {};
-    (Array.isArray(cfg.likedTrackIds) ? cfg.likedTrackIds : []).forEach(function (id) {
-        likedIds[Number(id)] = true;
-    });
+    if (window.RichsoundPlayer) {
+        window.RichsoundPlayer._rebind();
+        return;
+    }
 
-    var audio      = document.querySelector('[data-player-audio]');
-    var playerRoot = document.querySelector('[data-player-root]');
+    var audio = document.querySelector('[data-player-audio]');
+    if (!audio) { return; }
 
-    if (!audio || !playerRoot) { return; }
+    /* ── persistent state (survives Turbo visits) ── */
 
-    var titleEl      = playerRoot.querySelector('[data-player-title]');
-    var artistEl     = playerRoot.querySelector('[data-player-artist]');
-    var coverEl      = playerRoot.querySelector('[data-player-cover]');
-    var toggleButton = playerRoot.querySelector('[data-player-toggle]');
-    var prevButton   = playerRoot.querySelector('[data-player-prev]');
-    var nextButton   = playerRoot.querySelector('[data-player-next]');
-    var currentTimeEl   = playerRoot.querySelector('[data-player-current-time]');
-    var durationEl      = playerRoot.querySelector('[data-player-duration]');
-    var progressInput   = playerRoot.querySelector('[data-player-progress]');
-    var volumeInput     = playerRoot.querySelector('[data-player-volume]');
-    var progressSlider  = playerRoot.querySelector('[data-player-slider-progress]');
-    var volumeSlider    = playerRoot.querySelector('[data-player-slider-volume]');
-    var heartButton     = playerRoot.querySelector('.player__btn--heart');
-
+    var queue          = [];   /* active queue */
+    var pageContext    = [];   /* current page's playlist */
     var currentIndex   = -1;
     var listenTracked  = false;
     var shuffleMode    = false;
     var repeatMode     = 'off'; /* 'off' | 'all' | 'one' */
     var shuffleHistory = [];
-    var seeking        = false; /* true while the user drags a progress slider */
+    var seeking        = false;
+    var likedIds       = {};
+    var csrfToken      = '';
+    var isAuth         = false;
+    var userPlaylists  = [];
+    var queuePanel     = null;  /* desktop queue popup (lives in body) */
+    var queueOpen      = false;
 
-    /* ── events ──────────────────────────────── */
+    /* fresh DOM refs, refilled by rebind() on every page visit */
+    var ui = {};
 
     function emit(name, detail) {
-        playerRoot.dispatchEvent(new CustomEvent(name, { detail: detail, bubbles: true }));
+        document.dispatchEvent(new CustomEvent(name, { detail: detail }));
     }
 
     /* ── localStorage ────────────────────────── */
@@ -79,60 +81,6 @@
         } catch (e) {}
     }
 
-    function setSliderFill(sliderEl, pct) {
-        if (sliderEl) { sliderEl.style.setProperty('--fill', pct + '%'); }
-    }
-
-    function applyVolume(saved) {
-        var vol = (typeof saved.volume === 'number' && !isNaN(saved.volume))
-            ? saved.volume
-            : Number((volumeInput && volumeInput.value) || 0.8);
-        audio.volume = vol;
-        if (volumeInput) { volumeInput.value = String(vol); }
-        setSliderFill(volumeSlider, vol * 100);
-    }
-
-    function applyIndex(saved) {
-        if (typeof saved.index === 'number' && playlist[saved.index]) {
-            currentIndex = saved.index;
-        } else if (playlist.length > 0) {
-            currentIndex = Math.max(0, Math.min(initialIndex, playlist.length - 1));
-        }
-    }
-
-    function applyModes(saved) {
-        shuffleMode = saved.shuffle === true;
-        /* Migration: older builds stored repeat as a boolean (= repeat-one) */
-        if (saved.repeat === true)       { repeatMode = 'one'; }
-        else if (saved.repeat === 'all' || saved.repeat === 'one') { repeatMode = saved.repeat; }
-        else                             { repeatMode = 'off'; }
-    }
-
-    function updateModeButtons() {
-        var shuffleBtn = playerRoot.querySelector('.player__btn--shuffle');
-        var repeatBtn  = playerRoot.querySelector('.player__btn--repeat');
-        if (shuffleBtn) { shuffleBtn.classList.toggle('player__btn--active', shuffleMode); }
-        if (repeatBtn) {
-            repeatBtn.classList.toggle('player__btn--active', repeatMode !== 'off');
-            repeatBtn.classList.toggle('player__btn--repeat-one', repeatMode === 'one');
-        }
-        emit('rs:modechange', { shuffle: shuffleMode, repeat: repeatMode });
-    }
-
-    function randomIndexExcluding(exclude) {
-        if (playlist.length <= 1) { return 0; }
-        var idx;
-        do { idx = Math.floor(Math.random() * playlist.length); } while (idx === exclude);
-        return idx;
-    }
-
-    function nextShuffleIndex() {
-        var idx = randomIndexExcluding(currentIndex);
-        shuffleHistory.push(currentIndex);
-        if (shuffleHistory.length > 50) { shuffleHistory.shift(); }
-        return idx;
-    }
-
     /* ── helpers ─────────────────────────────── */
 
     function fmt(totalSeconds) {
@@ -142,22 +90,8 @@
         return m + ':' + (r < 10 ? '0' : '') + r;
     }
 
-    function updateProgress() {
-        var dur = isFinite(audio.duration) ? audio.duration : 0;
-        var cur = isFinite(audio.currentTime) ? audio.currentTime : 0;
-        var pct = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
-
-        /* Don't fight the user's finger while they drag the slider */
-        if (!seeking) {
-            if (progressInput) { progressInput.value = String(pct); }
-            setSliderFill(progressSlider, pct);
-        }
-        if (currentTimeEl) { currentTimeEl.textContent = fmt(cur); }
-        if (durationEl) {
-            durationEl.textContent = fmt(dur || (playlist[currentIndex] ? playlist[currentIndex].duration : 0));
-        }
-        /* Thin progress line on the mobile mini player */
-        playerRoot.style.setProperty('--mini-progress', pct + '%');
+    function setSliderFill(sliderEl, pct) {
+        if (sliderEl) { sliderEl.style.setProperty('--fill', pct + '%'); }
     }
 
     function coverStyle(url) {
@@ -165,16 +99,40 @@
         return 'linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.18)),url(\'' + url + '\')';
     }
 
+    function escHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ── painting ────────────────────────────── */
+
+    function updateProgress() {
+        var dur = isFinite(audio.duration) ? audio.duration : 0;
+        var cur = isFinite(audio.currentTime) ? audio.currentTime : 0;
+        var pct = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
+
+        /* Don't fight the user's finger while they drag the slider */
+        if (!seeking) {
+            if (ui.progressInput) { ui.progressInput.value = String(pct); }
+            setSliderFill(ui.progressSlider, pct);
+        }
+        if (ui.currentTimeEl) { ui.currentTimeEl.textContent = fmt(cur); }
+        if (ui.durationEl) {
+            ui.durationEl.textContent = fmt(dur || (queue[currentIndex] ? queue[currentIndex].duration : 0));
+        }
+        /* Thin progress line on the mobile mini player */
+        if (ui.root) { ui.root.style.setProperty('--mini-progress', pct + '%'); }
+    }
+
     function updateHeart() {
-        if (!heartButton) { return; }
-        if (!isAuth) { heartButton.hidden = true; return; }
-        var track = playlist[currentIndex];
-        heartButton.hidden = !track;
+        if (!ui.heartButton) { return; }
+        if (!isAuth) { ui.heartButton.hidden = true; return; }
+        var track = queue[currentIndex];
+        ui.heartButton.hidden = !track;
         if (!track) { return; }
         var liked = !!likedIds[Number(track.id)];
-        heartButton.classList.toggle('player__btn--heart-active', liked);
-        heartButton.setAttribute('aria-label', liked ? 'Убрать из избранного' : 'В избранное');
-        var svg = heartButton.querySelector('svg');
+        ui.heartButton.classList.toggle('player__btn--heart-active', liked);
+        ui.heartButton.setAttribute('aria-label', liked ? 'Убрать из избранного' : 'В избранное');
+        var svg = ui.heartButton.querySelector('svg');
         if (svg) {
             svg.setAttribute('fill', liked ? 'currentColor' : 'none');
             svg.setAttribute('stroke', 'currentColor');
@@ -182,29 +140,60 @@
         }
     }
 
+    function updateModeButtons() {
+        if (ui.shuffleButton) { ui.shuffleButton.classList.toggle('player__btn--active', shuffleMode); }
+        if (ui.repeatButton) {
+            ui.repeatButton.classList.toggle('player__btn--active', repeatMode !== 'off');
+            ui.repeatButton.classList.toggle('player__btn--repeat-one', repeatMode === 'one');
+        }
+        emit('rs:modechange', { shuffle: shuffleMode, repeat: repeatMode });
+    }
+
     function updateUI() {
-        var track = playlist[currentIndex];
+        var track = queue[currentIndex];
         if (!track) {
-            if (titleEl)       { titleEl.textContent  = 'Трек не выбран'; }
-            if (artistEl)      { artistEl.textContent = 'Выбери трек'; }
-            if (coverEl)       { coverEl.style.backgroundImage = ''; }
-            if (progressInput) { progressInput.value = '0'; }
-            setSliderFill(progressSlider, 0);
+            if (ui.titleEl)        { ui.titleEl.textContent  = 'Трек не выбран'; }
+            if (ui.artistEl)       { ui.artistEl.textContent = 'Выбери трек'; }
+            if (ui.coverEl)        { ui.coverEl.style.backgroundImage = ''; }
+            if (ui.progressInput)  { ui.progressInput.value = '0'; }
+            setSliderFill(ui.progressSlider, 0);
             updateHeart();
             return;
         }
-        if (titleEl)  { titleEl.textContent  = track.title; }
-        if (artistEl) { artistEl.textContent = track.artist; }
-        if (coverEl)  { coverEl.style.backgroundImage = coverStyle(track.coverUrl); }
+        if (ui.titleEl)  { ui.titleEl.textContent  = track.title; }
+        if (ui.artistEl) { ui.artistEl.textContent = track.artist; }
+        if (ui.coverEl)  { ui.coverEl.style.backgroundImage = coverStyle(track.coverUrl); }
         updateHeart();
         updateProgress();
     }
 
-    /* ── Media Session (lock screen / notification controls) ──── */
+    function setButtonsDisabled(disabled) {
+        [ui.toggleButton, ui.prevButton, ui.nextButton].forEach(function (btn) {
+            if (!btn) { return; }
+            if (disabled) { btn.setAttribute('disabled', 'disabled'); }
+            else          { btn.removeAttribute('disabled'); }
+        });
+    }
+
+    /* Repaint the whole (fresh) player bar from in-memory state */
+    function paint() {
+        updateUI();
+        updateModeButtons();
+        setButtonsDisabled(queue.length === 0);
+        if (ui.volumeInput) { ui.volumeInput.value = String(audio.volume); }
+        setSliderFill(ui.volumeSlider, audio.volume * 100);
+        if (ui.root) {
+            if (!audio.paused && audio.src) { ui.root.setAttribute('data-playing', '1'); }
+            else                            { ui.root.removeAttribute('data-playing'); }
+            ui.root.classList.remove('player--buffering');
+        }
+    }
+
+    /* ── Media Session (lock screen controls) ── */
 
     function updateMediaSession() {
         if (!('mediaSession' in navigator)) { return; }
-        var track = playlist[currentIndex];
+        var track = queue[currentIndex];
         if (!track) { return; }
         try {
             navigator.mediaSession.metadata = new MediaMetadata({
@@ -235,7 +224,7 @@
     /* ── listen tracking ─────────────────────── */
 
     function sendListen(isCompleted) {
-        var track = playlist[currentIndex];
+        var track = queue[currentIndex];
         if (!track || listenTracked || audio.currentTime < 5) { return; }
         listenTracked = true;
         var body = new URLSearchParams({
@@ -253,39 +242,52 @@
 
     /* ── playback ────────────────────────────── */
 
-    function setButtonsDisabled(disabled) {
-        [toggleButton, prevButton, nextButton].forEach(function (btn) {
-            if (!btn) { return; }
-            if (disabled) { btn.setAttribute('disabled', 'disabled'); }
-            else          { btn.removeAttribute('disabled'); }
-        });
+    function randomIndexExcluding(exclude) {
+        if (queue.length <= 1) { return 0; }
+        var idx;
+        do { idx = Math.floor(Math.random() * queue.length); } while (idx === exclude);
+        return idx;
+    }
+
+    function nextShuffleIndex() {
+        var idx = randomIndexExcluding(currentIndex);
+        shuffleHistory.push(currentIndex);
+        if (shuffleHistory.length > 50) { shuffleHistory.shift(); }
+        return idx;
     }
 
     function loadTrack(index, autoplay) {
-        if (!playlist[index]) { return; }
+        if (!queue[index]) { return; }
         currentIndex  = index;
         listenTracked = false;
-        audio.src     = playlist[index].audioUrl || '';
+        audio.src     = queue[index].audioUrl || '';
         audio.load();
         updateUI();
         updateMediaSession();
         saveState();
-        if (queueOpen) { renderQueue(); }
-        emit('rs:trackchange', { index: index, track: playlist[index] });
+        if (queueOpen) { renderQueuePanel(); }
+        emit('rs:trackchange', { index: index, track: queue[index] });
         if (autoplay && audio.src) {
             audio.play().catch(function () {});
         }
     }
 
+    function setQueue(tracks) {
+        queue          = Array.isArray(tracks) ? tracks : [];
+        shuffleHistory = [];
+        setButtonsDisabled(queue.length === 0);
+        if (queueOpen) { renderQueuePanel(); }
+    }
+
     function togglePlayback() {
-        if (!playlist[currentIndex]) { return; }
+        if (!queue[currentIndex]) { return; }
         if (!audio.src)    { loadTrack(currentIndex, true); return; }
         if (audio.paused)  { audio.play().catch(function () {}); }
         else               { audio.pause(); }
     }
 
     function goPrev() {
-        if (playlist.length === 0) { return; }
+        if (queue.length === 0) { return; }
         /* Spotify-style: a few seconds in, prev restarts the track */
         if (audio.currentTime > 3 && audio.src) {
             audio.currentTime = 0;
@@ -294,15 +296,15 @@
         if (shuffleMode && shuffleHistory.length > 0) {
             loadTrack(shuffleHistory.pop(), true);
         } else {
-            loadTrack((currentIndex - 1 + playlist.length) % playlist.length, true);
+            loadTrack((currentIndex - 1 + queue.length) % queue.length, true);
         }
     }
 
     /* manual=true — user pressed the button: always wraps around.
        manual=false — auto-advance on track end: respects repeatMode. */
     function goNext(manual) {
-        if (playlist.length === 0) { return; }
-        var atEnd = currentIndex >= playlist.length - 1;
+        if (queue.length === 0) { return; }
+        var atEnd = currentIndex >= queue.length - 1;
         if (!manual && repeatMode === 'off' && atEnd) {
             /* End of queue: stay on the last track, paused at the start */
             audio.currentTime = 0;
@@ -311,7 +313,7 @@
         }
         var nextIdx = shuffleMode
             ? nextShuffleIndex()
-            : (currentIndex + 1) % playlist.length;
+            : (currentIndex + 1) % queue.length;
         loadTrack(nextIdx, true);
     }
 
@@ -330,15 +332,15 @@
         document.querySelectorAll('.js-like-btn[data-track-id="' + trackId + '"]').forEach(function (btn) {
             btn.classList.toggle('track-actions__like--active', liked);
             btn.setAttribute('aria-label', liked ? 'Убрать лайк' : 'Поставить лайк');
-            var icon  = btn.querySelector('.js-like-icon');
+            var icon    = btn.querySelector('.js-like-icon');
             var countEl = btn.querySelector('.js-like-count');
-            if (icon)              { icon.setAttribute('fill', liked ? 'currentColor' : 'none'); }
-            if (countEl && count !== undefined) { countEl.textContent = count; }
+            if (icon)                            { icon.setAttribute('fill', liked ? 'currentColor' : 'none'); }
+            if (countEl && count !== undefined)  { countEl.textContent = count; }
         });
     }
 
     function toggleLike() {
-        var track = playlist[currentIndex];
+        var track = queue[currentIndex];
         if (!track || !isAuth) { return; }
         var trackId = Number(track.id);
         fetch('/tracks/like', {
@@ -355,64 +357,44 @@
         .catch(function () {});
     }
 
-    /* Track cards have their own like handlers (inline in views) — observe
-       their clicks and pick up the new state once their fetch settles. */
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.js-like-btn');
-        if (!btn || !btn.dataset.trackId) { return; }
-        var trackId = Number(btn.dataset.trackId);
-        setTimeout(function () {
-            setLiked(trackId, btn.classList.contains('track-actions__like--active'));
-        }, 400);
-    });
+    function addToPlaylist(playlistId) {
+        var track = queue[currentIndex];
+        if (!track || !isAuth) { return Promise.resolve(false); }
+        return fetch('/playlists/tracks/add', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', 'X-CSRF-Token': csrfToken },
+            body:    new URLSearchParams({ playlist_id: String(playlistId), track_id: String(track.id) })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { return data.added === true; })
+        .catch(function () { return false; });
+    }
 
-    /* ── UI events ───────────────────────────── */
-
-    document.querySelectorAll('.js-play-track').forEach(function (el) {
-        el.addEventListener('click', function (e) {
-            var btn = e.target.closest('button');
-            if (btn && !btn.classList.contains('js-play-track') && el !== btn) {
-                e.preventDefault();
-            }
-            var idx = Number(el.getAttribute('data-track-index'));
-            if (!isNaN(idx)) { loadTrack(idx, true); }
-        });
-        el.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
-        });
-    });
-
-    if (toggleButton) { toggleButton.addEventListener('click', togglePlayback); }
-    if (prevButton)   { prevButton.addEventListener('click', goPrev); }
-    if (nextButton)   { nextButton.addEventListener('click', function () { goNext(true); }); }
-    if (heartButton)  { heartButton.addEventListener('click', toggleLike); }
-
-    /* ── Queue panel ─────────────────────────────── */
-
-    var queuePanel  = null;
-    var queueOpen   = false;
+    /* ── Desktop queue popup ─────────────────── */
 
     function buildQueuePanel() {
-        if (queuePanel) { return; }
+        /* Turbo swaps <body>, so a panel from the previous page is gone —
+           detect that and rebuild. */
+        if (queuePanel && document.body.contains(queuePanel)) { return; }
         queuePanel = document.createElement('div');
         queuePanel.className = 'player-queue';
         queuePanel.innerHTML = '<div class="player-queue__header"><span>Очередь</span><button type="button" class="player-queue__close" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:1.1rem;padding:0;" aria-label="Закрыть">✕</button></div><div class="player-queue__list"></div>';
         document.body.appendChild(queuePanel);
-        queuePanel.querySelector('.player-queue__close').addEventListener('click', function () { toggleQueue(false); });
+        queuePanel.querySelector('.player-queue__close').addEventListener('click', function () { toggleQueuePanel(false); });
     }
 
-    function renderQueue() {
+    function renderQueuePanel() {
         if (!queuePanel) { return; }
         var listEl = queuePanel.querySelector('.player-queue__list');
         if (!listEl) { return; }
 
-        if (playlist.length === 0) {
+        if (queue.length === 0) {
             listEl.innerHTML = '<p style="padding:16px;color:rgba(255,255,255,.3);font-size:.8rem;text-align:center;">Нет треков</p>';
             return;
         }
 
         listEl.innerHTML = '';
-        playlist.forEach(function (track, idx) {
+        queue.forEach(function (track, idx) {
             var item = document.createElement('div');
             item.className = 'player-queue__item' + (idx === currentIndex ? ' player-queue__item--active' : '');
             item.setAttribute('data-queue-index', idx);
@@ -435,75 +417,131 @@
         if (active) { active.scrollIntoView({ block: 'nearest' }); }
     }
 
-    function escHtml(str) {
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function toggleQueue(force) {
+    function toggleQueuePanel(force) {
         queueOpen = typeof force === 'boolean' ? force : !queueOpen;
         if (queueOpen) {
             buildQueuePanel();
-            renderQueue();
+            renderQueuePanel();
             queuePanel.classList.add('player-queue--open');
         } else if (queuePanel) {
             queuePanel.classList.remove('player-queue--open');
         }
     }
 
-    var queueButton = playerRoot.querySelector('.player__btn--queue');
-    if (queueButton) {
-        queueButton.addEventListener('click', function () { toggleQueue(); });
+    /* ── per-page wiring (runs on boot and on every Turbo visit) ── */
+
+    function rebind() {
+        var cfg = window.PLAYER_CONFIG || {};
+        if (typeof cfg.csrfToken === 'string' && cfg.csrfToken !== '') { csrfToken = cfg.csrfToken; }
+        isAuth        = cfg.isAuth === true;
+        userPlaylists = Array.isArray(cfg.userPlaylists) ? cfg.userPlaylists : [];
+        (Array.isArray(cfg.likedTrackIds) ? cfg.likedTrackIds : []).forEach(function (id) {
+            likedIds[Number(id)] = true;
+        });
+        pageContext = Array.isArray(cfg.playlist) ? cfg.playlist : [];
+
+        /* The body was swapped: previous page's panel and open state are gone */
+        if (queuePanel && !document.body.contains(queuePanel)) {
+            queuePanel = null;
+            queueOpen  = false;
+        }
+        seeking = false;
+
+        var root = document.querySelector('[data-player-root]');
+        ui = {
+            root:           root,
+            titleEl:        root ? root.querySelector('[data-player-title]')           : null,
+            artistEl:       root ? root.querySelector('[data-player-artist]')          : null,
+            coverEl:        root ? root.querySelector('[data-player-cover]')           : null,
+            toggleButton:   root ? root.querySelector('[data-player-toggle]')          : null,
+            prevButton:     root ? root.querySelector('[data-player-prev]')            : null,
+            nextButton:     root ? root.querySelector('[data-player-next]')            : null,
+            currentTimeEl:  root ? root.querySelector('[data-player-current-time]')    : null,
+            durationEl:     root ? root.querySelector('[data-player-duration]')        : null,
+            progressInput:  root ? root.querySelector('[data-player-progress]')        : null,
+            volumeInput:    root ? root.querySelector('[data-player-volume]')          : null,
+            progressSlider: root ? root.querySelector('[data-player-slider-progress]') : null,
+            volumeSlider:   root ? root.querySelector('[data-player-slider-volume]')   : null,
+            heartButton:    root ? root.querySelector('.player__btn--heart')           : null,
+            shuffleButton:  root ? root.querySelector('.player__btn--shuffle')         : null,
+            repeatButton:   root ? root.querySelector('.player__btn--repeat')          : null,
+            queueButton:    root ? root.querySelector('.player__btn--queue')           : null
+        };
+
+        /* All elements are fresh after a body swap — no duplicate listeners */
+
+        if (ui.toggleButton) { ui.toggleButton.addEventListener('click', togglePlayback); }
+        if (ui.prevButton)   { ui.prevButton.addEventListener('click', goPrev); }
+        if (ui.nextButton)   { ui.nextButton.addEventListener('click', function () { goNext(true); }); }
+        if (ui.heartButton)  { ui.heartButton.addEventListener('click', toggleLike); }
+        if (ui.queueButton)  { ui.queueButton.addEventListener('click', function () { toggleQueuePanel(); }); }
+
+        if (ui.shuffleButton) {
+            ui.shuffleButton.removeAttribute('tabindex');
+            ui.shuffleButton.addEventListener('click', function () {
+                shuffleMode = !shuffleMode;
+                if (shuffleMode) { shuffleHistory = []; }
+                updateModeButtons();
+                saveState();
+            });
+        }
+
+        if (ui.repeatButton) {
+            ui.repeatButton.removeAttribute('tabindex');
+            ui.repeatButton.addEventListener('click', function () {
+                repeatMode = repeatMode === 'off' ? 'all' : (repeatMode === 'all' ? 'one' : 'off');
+                updateModeButtons();
+                saveState();
+            });
+        }
+
+        /* Seek: preview while dragging, commit on release */
+        if (ui.progressInput) {
+            ui.progressInput.addEventListener('input', function () {
+                seeking = true;
+                setSliderFill(ui.progressSlider, Number(ui.progressInput.value));
+                var dur = isFinite(audio.duration) ? audio.duration : 0;
+                if (ui.currentTimeEl && dur > 0) {
+                    ui.currentTimeEl.textContent = fmt((Number(ui.progressInput.value) / 100) * dur);
+                }
+            });
+            ui.progressInput.addEventListener('change', function () {
+                var dur = isFinite(audio.duration) ? audio.duration : 0;
+                if (dur > 0) { audio.currentTime = (Number(ui.progressInput.value) / 100) * dur; }
+                seeking = false;
+            });
+        }
+
+        if (ui.volumeInput) {
+            ui.volumeInput.addEventListener('input', function () {
+                var vol = Number(ui.volumeInput.value);
+                audio.volume = vol;
+                setSliderFill(ui.volumeSlider, vol * 100);
+                saveState();
+            });
+        }
+
+        /* Track cards: play from this page's context playlist */
+        document.querySelectorAll('.js-play-track').forEach(function (el) {
+            el.addEventListener('click', function (e) {
+                var btn = e.target.closest('button');
+                if (btn && !btn.classList.contains('js-play-track') && el !== btn) {
+                    e.preventDefault();
+                }
+                var idx = Number(el.getAttribute('data-track-index'));
+                if (isNaN(idx)) { return; }
+                if (queue !== pageContext) { setQueue(pageContext); }
+                loadTrack(idx, true);
+            });
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+            });
+        });
+
+        paint();
     }
 
-    var shuffleButton = playerRoot.querySelector('.player__btn--shuffle');
-    var repeatButton  = playerRoot.querySelector('.player__btn--repeat');
-
-    if (shuffleButton) {
-        shuffleButton.removeAttribute('tabindex');
-        shuffleButton.addEventListener('click', function () {
-            shuffleMode = !shuffleMode;
-            if (shuffleMode) { shuffleHistory = []; }
-            updateModeButtons();
-            saveState();
-        });
-    }
-
-    if (repeatButton) {
-        repeatButton.removeAttribute('tabindex');
-        repeatButton.addEventListener('click', function () {
-            repeatMode = repeatMode === 'off' ? 'all' : (repeatMode === 'all' ? 'one' : 'off');
-            updateModeButtons();
-            saveState();
-        });
-    }
-
-    /* Seek: preview while dragging, commit on release */
-    if (progressInput) {
-        progressInput.addEventListener('input', function () {
-            seeking = true;
-            setSliderFill(progressSlider, Number(progressInput.value));
-            var dur = isFinite(audio.duration) ? audio.duration : 0;
-            if (currentTimeEl && dur > 0) {
-                currentTimeEl.textContent = fmt((Number(progressInput.value) / 100) * dur);
-            }
-        });
-        progressInput.addEventListener('change', function () {
-            var dur = isFinite(audio.duration) ? audio.duration : 0;
-            if (dur > 0) { audio.currentTime = (Number(progressInput.value) / 100) * dur; }
-            seeking = false;
-        });
-    }
-
-    if (volumeInput) {
-        volumeInput.addEventListener('input', function () {
-            var vol = Number(volumeInput.value);
-            audio.volume = vol;
-            setSliderFill(volumeSlider, vol * 100);
-            saveState();
-        });
-    }
-
-    /* ── audio events ────────────────────────── */
+    /* ── audio events (bound ONCE to the permanent audio node) ── */
 
     audio.addEventListener('loadedmetadata', updateProgress);
 
@@ -516,88 +554,109 @@
     });
 
     audio.addEventListener('play', function () {
-        playerRoot.setAttribute('data-playing', '1');
+        if (ui.root) { ui.root.setAttribute('data-playing', '1'); }
     });
 
     audio.addEventListener('pause', function () {
-        playerRoot.removeAttribute('data-playing');
+        if (ui.root) { ui.root.removeAttribute('data-playing'); }
     });
 
     /* Buffering indicator */
     audio.addEventListener('waiting', function () {
-        playerRoot.classList.add('player--buffering');
+        if (ui.root) { ui.root.classList.add('player--buffering'); }
     });
     ['canplay', 'playing', 'pause'].forEach(function (ev) {
         audio.addEventListener(ev, function () {
-            playerRoot.classList.remove('player--buffering');
+            if (ui.root) { ui.root.classList.remove('player--buffering'); }
         });
     });
 
     audio.addEventListener('ended', function () {
         sendListen(true);
-        playerRoot.removeAttribute('data-playing');
+        if (ui.root) { ui.root.removeAttribute('data-playing'); }
         if (repeatMode === 'one') {
             audio.currentTime = 0;
             audio.play().catch(function () {});
-        } else if (playlist.length > 1 || repeatMode === 'all') {
+        } else if (queue.length > 1 || repeatMode === 'all') {
             goNext(false);
         }
     });
 
     window.addEventListener('beforeunload', function () { sendListen(false); });
 
+    /* Track cards have their own like handlers (inline in views) — observe
+       their clicks and pick up the new state once their fetch settles. */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.js-like-btn');
+        if (!btn || !btn.dataset.trackId) { return; }
+        var trackId = Number(btn.dataset.trackId);
+        setTimeout(function () {
+            setLiked(trackId, btn.classList.contains('track-actions__like--active'));
+        }, 400);
+    });
+
     /* ── public API ──────────────────────────── */
 
-    function addToPlaylist(playlistId) {
-        var track = playlist[currentIndex];
-        if (!track || !isAuth) { return Promise.resolve(false); }
-        return fetch('/playlists/tracks/add', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', 'X-CSRF-Token': csrfToken },
-            body:    new URLSearchParams({ playlist_id: String(playlistId), track_id: String(track.id) })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) { return data.added === true; })
-        .catch(function () { return false; });
-    }
-
     window.RichsoundPlayer = {
-        getPlaylist:      function () { return playlist; },
+        getPlaylist:      function () { return queue; },
         getCurrentIndex:  function () { return currentIndex; },
         play:             function (index) { loadTrack(index, true); },
+        setQueue:         setQueue,
         toggleLike:       toggleLike,
         isLiked:          function (trackId) { return !!likedIds[Number(trackId)]; },
         isAuth:           function () { return isAuth; },
-        getUserPlaylists: function () { return Array.isArray(cfg.userPlaylists) ? cfg.userPlaylists : []; },
-        addToPlaylist:    addToPlaylist
+        getUserPlaylists: function () { return userPlaylists; },
+        addToPlaylist:    addToPlaylist,
+        _rebind:          rebind
     };
 
-    /* ── init ────────────────────────────────── */
+    /* ── boot (first execution only) ─────────── */
 
-    function init() {
+    function boot() {
+        var cfg   = window.PLAYER_CONFIG || {};
         var saved = loadSavedState();
-        applyVolume(saved);
-        applyIndex(saved);
-        applyModes(saved);
-        updateUI();
-        updateModeButtons();
-        setButtonsDisabled(playlist.length === 0);
-        setupMediaSessionHandlers();
-        if (playlist[currentIndex]) {
-            updateMediaSession();
-            emit('rs:trackchange', { index: currentIndex, track: playlist[currentIndex] });
+
+        /* volume */
+        var vol = (typeof saved.volume === 'number' && !isNaN(saved.volume)) ? saved.volume : 0.8;
+        audio.volume = vol;
+
+        /* modes (migration: older builds stored repeat as boolean = repeat-one) */
+        shuffleMode = saved.shuffle === true;
+        if (saved.repeat === true)                                  { repeatMode = 'one'; }
+        else if (saved.repeat === 'all' || saved.repeat === 'one')  { repeatMode = saved.repeat; }
+        else                                                        { repeatMode = 'off'; }
+
+        /* cold start: the page context becomes the initial queue */
+        function finishBoot() {
+            queue = pageContext;
+            var initialIndex = typeof cfg.initialIndex === 'number' ? cfg.initialIndex : 0;
+            if (typeof saved.index === 'number' && queue[saved.index]) {
+                currentIndex = saved.index;
+            } else if (queue.length > 0) {
+                currentIndex = Math.max(0, Math.min(initialIndex, queue.length - 1));
+            }
+            setupMediaSessionHandlers();
+            paint();
+            if (queue[currentIndex]) {
+                updateMediaSession();
+                emit('rs:trackchange', { index: currentIndex, track: queue[currentIndex] });
+            }
+        }
+
+        rebind(); /* fills pageContext, csrf, likedIds and wires the page */
+
+        if (pageContext.length === 0 && typeof cfg.fetchUrl === 'string') {
+            fetch(cfg.fetchUrl)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    pageContext = Array.isArray(data) ? data : [];
+                    finishBoot();
+                })
+                .catch(function () { finishBoot(); });
+        } else {
+            finishBoot();
         }
     }
 
-    if (playlist.length === 0 && fetchUrl) {
-        fetch(fetchUrl)
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                playlist = Array.isArray(data) ? data : [];
-                init();
-            })
-            .catch(function () { init(); });
-    } else {
-        init();
-    }
+    boot();
 }());

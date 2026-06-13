@@ -29,7 +29,15 @@ foreach ($pcRawPlaylists as $pl) {
     }
 }
 ?>
-<audio preload="none" data-player-audio></audio>
+<?php /* data-turbo-permanent: Turbo Drive keeps this exact node alive across
+         page visits — playback survives navigation. Must share the same id
+         on every page of the listening surface. */ ?>
+<audio id="playerAudio" preload="none" data-player-audio data-turbo-permanent></audio>
+<script src="/assets/js/vendor/turbo.umd.js" data-turbo-eval="false"></script>
+<script data-turbo-eval="false">
+/* Forms (logout, uploads) stay native — Turbo drives links only */
+if (window.Turbo) { window.Turbo.setFormMode('off'); }
+</script>
 <script>
 window.PLAYER_CONFIG = {
     csrfToken:     '<?= \App\Core\Csrf::token() ?>',

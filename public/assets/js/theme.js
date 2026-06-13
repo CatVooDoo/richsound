@@ -31,9 +31,16 @@
     var saved = localStorage.getItem(STORAGE_KEY) || 'light';
     applyTheme(saved);
 
-    document.addEventListener('DOMContentLoaded', function () {
-        updateIcon(saved);
-        var btn = document.querySelector('[data-theme-toggle]');
-        if (btn) btn.addEventListener('click', toggle);
-    });
+    /* Delegated + guarded: Turbo Drive swaps the <body> on navigation, so a
+       handler bound to a concrete button would die with the old page. */
+    if (!window.__rsThemeBound) {
+        window.__rsThemeBound = true;
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('[data-theme-toggle]')) { toggle(); }
+        });
+        document.addEventListener('DOMContentLoaded', function () { updateIcon(saved); });
+        document.addEventListener('turbo:load', function () {
+            updateIcon(html.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+        });
+    }
 }());

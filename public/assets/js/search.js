@@ -118,12 +118,21 @@
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         var q = field.value.trim();
-        if (q !== '') {
-            window.location.href = '/search?q=' + encodeURIComponent(q);
-        }
+        if (q === '') { return; }
+        var url = '/search?q=' + encodeURIComponent(q);
+        /* Turbo keeps the audio element (and playback) alive */
+        if (window.Turbo) { window.Turbo.visit(url); }
+        else              { window.location.href = url; }
     });
 
-    document.addEventListener('click', function (e) {
-        if (!form.contains(e.target)) { dropdown.hidden = true; }
-    });
+    /* Delegated + guarded: this script re-runs on every Turbo visit, a plain
+       document listener would pile up and hold dead nodes. */
+    if (!window.__rsSearchDocBound) {
+        window.__rsSearchDocBound = true;
+        document.addEventListener('click', function (e) {
+            var f = document.querySelector('.js-search-form');
+            var d = document.querySelector('.js-search-dropdown');
+            if (f && d && !f.contains(e.target)) { d.hidden = true; }
+        });
+    }
 }());

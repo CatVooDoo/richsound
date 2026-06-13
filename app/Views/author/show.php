@@ -371,7 +371,7 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
                             <?= $isSubscribed ? 'Подписан' : 'Подписаться' ?>
                         </button>
                     <?php elseif ($user === null): ?>
-                        <span class="ap-login-hint"><a href="/login">Войди</a>, чтобы подписаться</span>
+                        <span class="ap-login-hint"><a href="/login" data-turbo="false">Войди</a>, чтобы подписаться</span>
                     <?php endif; ?>
                 </div>
             </div>

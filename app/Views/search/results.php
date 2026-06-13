@@ -125,7 +125,7 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
         <div class="sidebar__group">
             <div class="sidebar__label">Управление</div>
             <?php if (\in_array(($user['role'] ?? null), ['author', 'admin'], true)): ?>
-                <a class="sidebar__link" href="/author">
+                <a class="sidebar__link" href="/author" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path>
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -136,7 +136,7 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
                 </a>
             <?php endif; ?>
             <?php if (($user['role'] ?? null) === 'admin'): ?>
-                <a class="sidebar__link" href="/admin">
+                <a class="sidebar__link" href="/admin" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                         <path d="M7 8h10"></path><path d="M7 12h10"></path><path d="M7 16h6"></path>
@@ -152,7 +152,7 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
                 <button class="sidebar__upgrade" type="submit">Выйти</button>
             </form>
         <?php else: ?>
-            <a class="sidebar__upgrade sidebar__upgrade--link" href="/register">Создать аккаунт</a>
+            <a class="sidebar__upgrade sidebar__upgrade--link" href="/register" data-turbo="false">Создать аккаунт</a>
         <?php endif; ?>
     </aside>
 
@@ -188,8 +188,8 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
                         <span class="topbar__profile-role"><?= $h((string) ($user['email'] ?? '')) ?></span>
                     </div>
                 <?php else: ?>
-                    <a class="topbar__auth-link" href="/login">Войти</a>
-                    <a class="topbar__auth-link topbar__auth-link--primary" href="/register">Регистрация</a>
+                    <a class="topbar__auth-link" href="/login" data-turbo="false">Войти</a>
+                    <a class="topbar__auth-link topbar__auth-link--primary" href="/register" data-turbo="false">Регистрация</a>
                 <?php endif; ?>
             </div>
         </header>
@@ -403,9 +403,12 @@ $userRole   = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Акка�
         });
     });
 
-    document.addEventListener('click', function () {
-        document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
-    });
+    if (!window.__rsDropdownDocBound) {
+        window.__rsDropdownDocBound = true;
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
+        });
+    }
 }());
 </script>
 <script src="/assets/js/search.js"></script>

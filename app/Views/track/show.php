@@ -449,7 +449,7 @@ $hasCover = $coverPath !== '';
                     <?php endif; ?>
                 <?php else: ?>
                     <p class="track-auth-hint">
-                        <a href="/login">Войди</a>, чтобы ставить лайки
+                        <a href="/login" data-turbo="false">Войди</a>, чтобы ставить лайки
                     </p>
                 <?php endif; ?>
             </div>
@@ -458,68 +458,25 @@ $hasCover = $coverPath !== '';
     </div>
 </div>
 
-<audio preload="none" data-player-audio></audio>
 
-<footer class="dashboard__player" data-player-root>
-    <div class="player__now">
-        <div class="player__art" data-player-cover></div>
-        <div class="player__info">
-            <p class="player__title" data-player-title>Трек не выбран</p>
-            <p class="player__artist" data-player-artist>Выбери трек</p>
-        </div>
-        <button class="player__btn player__btn--heart" type="button" aria-label="В избранное">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 21-1.45-1.32C5.4 15 2 11.86 2 8a5 5 0 0 1 9.08-2.92A5 5 0 0 1 20 8c0 3.86-3.4 7-8.55 11.68z"/></svg>
-        </button>
-    </div>
-    <div class="player__center">
-        <div class="player__controls">
-            <button class="player__btn player__btn--shuffle" type="button" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
-            <button class="player__btn player__btn--prev" type="button" data-player-prev aria-label="Предыдущий трек"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16" rx="1"/></svg></button>
-            <button class="player__btn player__btn--play" type="button" data-player-toggle aria-label="Воспроизвести">
-                <svg class="player__icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <svg class="player__icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="2"/><rect x="14" y="4" width="4" height="16" rx="2"/></svg>
-            </button>
-            <button class="player__btn player__btn--next" type="button" data-player-next aria-label="Следующий трек"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16" rx="1"/></svg></button>
-            <button class="player__btn player__btn--repeat" type="button" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
-        </div>
-        <div class="player__bar">
-            <span class="player__time" data-player-current-time>0:00</span>
-            <div class="player__slider" data-player-slider-progress>
-                <div class="player__slider-rail"></div>
-                <div class="player__slider-fill"></div>
-                <input class="player__range" type="range" min="0" max="100" value="0" step="0.1" data-player-progress aria-label="Позиция воспроизведения">
-            </div>
-            <span class="player__time" data-player-duration>0:00</span>
-        </div>
-    </div>
-    <div class="player__side">
-        <button class="player__btn" type="button" aria-label="Громкость"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
-        <div class="player__slider player__slider--vol" data-player-slider-volume>
-            <div class="player__slider-rail"></div>
-            <div class="player__slider-fill"></div>
-            <input class="player__range" type="range" min="0" max="1" step="0.01" value="0.8" data-player-volume aria-label="Громкость">
-        </div>
-    </div>
-</footer>
+<?php require __DIR__ . '/../partials/player-bar.php'; ?>
 
-<script>
-window.PLAYER_CONFIG = {
-    csrfToken: '<?= \App\Core\Csrf::token() ?>',
-    playlist: [<?= json_encode([
-        'id'       => $trackId,
-        'title'    => $trackTitle,
-        'artist'   => $authorName,
-        'album'    => $albumTitle,
-        'audioUrl' => '/player/stream?id=' . $trackId,
-        'coverUrl' => $coverPath,
-        'duration' => $duration,
-        'plays'    => $playsCount,
-        'likes'    => $likesCount,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>],
-    initialIndex: 0
-};
-</script>
-<script src="/assets/js/player.js"></script>
+<?php
+$playlist = [[
+    'id'       => $trackId,
+    'title'    => $trackTitle,
+    'artist'   => $authorName,
+    'authorId' => (int) ($track['author_id'] ?? 0),
+    'album'    => $albumTitle,
+    'audioUrl' => '/player/stream?id=' . $trackId,
+    'coverUrl' => $coverPath,
+    'duration' => $duration,
+    'plays'    => $playsCount,
+    'likes'    => $likesCount,
+]];
+require __DIR__ . '/../partials/mobile-player.php';
+require __DIR__ . '/../partials/player-config.php';
+?>
 <script>
 (function () {
     'use strict';
@@ -592,9 +549,12 @@ window.PLAYER_CONFIG = {
         });
     });
 
-    document.addEventListener('click', function () {
-        document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
-    });
+    if (!window.__rsDropdownDocBound) {
+        window.__rsDropdownDocBound = true;
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
+        });
+    }
 }());
 </script>
 </body>

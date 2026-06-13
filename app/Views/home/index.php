@@ -179,7 +179,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                 <span class="sidebar__text">Любимые треки</span>
             </a>
             <?php if (\in_array(($user['role'] ?? null), ['author', 'admin'], true)): ?>
-                <a class="sidebar__link" href="/author">
+                <a class="sidebar__link" href="/author" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path>
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -190,7 +190,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                 </a>
             <?php endif; ?>
             <?php if (($user['role'] ?? null) === 'admin'): ?>
-                <a class="sidebar__link" href="/admin">
+                <a class="sidebar__link" href="/admin" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                         <path d="M7 8h10"></path>
@@ -208,7 +208,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                 <button class="sidebar__upgrade" type="submit">Выйти</button>
             </form>
         <?php else: ?>
-            <a class="sidebar__upgrade sidebar__upgrade--link" href="/register">Создать аккаунт</a>
+            <a class="sidebar__upgrade sidebar__upgrade--link" href="/register" data-turbo="false">Создать аккаунт</a>
         <?php endif; ?>
     </aside>
 
@@ -241,8 +241,8 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                         <span class="topbar__profile-role"><?= $h((string) $user['email']) ?></span>
                     </div>
                 <?php else: ?>
-                    <a class="topbar__auth-link" href="/login">Войти</a>
-                    <a class="topbar__auth-link topbar__auth-link--primary" href="/register">Регистрация</a>
+                    <a class="topbar__auth-link" href="/login" data-turbo="false">Войти</a>
+                    <a class="topbar__auth-link topbar__auth-link--primary" href="/register" data-turbo="false">Регистрация</a>
                 <?php endif; ?>
             </div>
         </header>
@@ -277,7 +277,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                                             <span>Слушать сейчас</span>
                                         </button>
                                     <?php elseif (!$isAuthenticated): ?>
-                                        <a class="button button--primary" href="/register">
+                                        <a class="button button--primary" href="/register" data-turbo="false">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                                 <path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l10.74-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z"></path>
                                             </svg>
@@ -359,7 +359,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                             <li class="perk perk--no">Прослушивание треков</li>
                             <li class="perk perk--no">Лайки и плейлисты</li>
                         </ul>
-                        <a class="role-card__cta" href="/login">Войти в аккаунт</a>
+                        <a class="role-card__cta" href="/login" data-turbo="false">Войти в аккаунт</a>
                     </div>
 
                     <div class="role-card role-card--listener">
@@ -377,7 +377,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                             <li class="perk perk--ok">Плейлисты и библиотека</li>
                             <li class="perk perk--ok">Подписки на авторов</li>
                         </ul>
-                        <a class="role-card__cta" href="/register">Зарегистрироваться</a>
+                        <a class="role-card__cta" href="/register" data-turbo="false">Зарегистрироваться</a>
                     </div>
 
                     <div class="role-card role-card--author">
@@ -398,7 +398,7 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
                             <li class="perk perk--ok">Аналитика прослушиваний</li>
                             <li class="perk perk--ok">Публичный профиль артиста</li>
                         </ul>
-                        <a class="role-card__cta role-card__cta--accent" href="/register">Стать автором</a>
+                        <a class="role-card__cta role-card__cta--accent" href="/register" data-turbo="false">Стать автором</a>
                     </div>
 
                     <div class="role-card role-card--admin">
@@ -643,9 +643,12 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
     });
 
     /* close dropdowns on outside click */
-    document.addEventListener('click', function () {
-        document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
-    });
+    if (!window.__rsDropdownDocBound) {
+        window.__rsDropdownDocBound = true;
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.playlist-dropdown').forEach(function (d) { d.hidden = true; });
+        });
+    }
 }());
 </script>
 <script>
@@ -661,7 +664,10 @@ $initialIndex = $initialTrack !== null ? ($trackIndexById[(int) ($initialTrack['
         slides[current].classList.add('hero__slide--active');
     }
 
-    setInterval(function () { goTo(current + 1); }, 8000);
+    /* This script re-runs on every Turbo visit — stop the previous slider
+       interval, it holds slides from the discarded body. */
+    if (window.__rsHeroSlider) { clearInterval(window.__rsHeroSlider); }
+    window.__rsHeroSlider = setInterval(function () { goTo(current + 1); }, 8000);
 }());
 </script>
 

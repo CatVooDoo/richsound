@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
+use App\Models\Like;
 use App\Models\Playlist;
 use App\Models\Track;
 
@@ -42,6 +43,7 @@ final class PlaylistController extends Controller
             'id'       => (int) $t['id'],
             'title'    => (string) $t['title'],
             'artist'   => (string) ($t['author_name'] ?? ''),
+            'authorId' => (int) ($t['author_id'] ?? 0),
             'album'    => (string) ($t['album_title'] ?? ''),
             'audioUrl' => '/player/stream?id=' . $t['id'],
             'coverUrl' => (string) ($t['cover_path'] ?? ''),
@@ -56,6 +58,8 @@ final class PlaylistController extends Controller
             'tracks'         => $tracks,
             'isOwner'        => $isOwner,
             'playerPlaylist' => $playerPlaylist,
+            'likedTrackIds'  => $user !== null ? (new Like())->getTrackIdsByUser((int) $user['id']) : [],
+            'userPlaylists'  => $user !== null ? (new Playlist())->findByUserId((int) $user['id']) : [],
         ]);
     }
 

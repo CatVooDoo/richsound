@@ -31,11 +31,13 @@ final class TrackController extends Controller
         $user          = Auth::user();
         $isLiked       = false;
         $userPlaylists = [];
+        $likedTrackIds = [];
 
         if ($user !== null) {
             $userId        = (int) $user['id'];
             $isLiked       = (new Like())->isLiked($userId, $id);
             $userPlaylists = (new Playlist())->findByUserId($userId);
+            $likedTrackIds = (new Like())->getTrackIdsByUser($userId);
         }
 
         $this->render('track/show', [
@@ -43,6 +45,7 @@ final class TrackController extends Controller
             'track'         => $track,
             'isLiked'       => $isLiked,
             'userPlaylists' => $userPlaylists,
+            'likedTrackIds' => $likedTrackIds,
         ]);
     }
 

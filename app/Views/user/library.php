@@ -109,7 +109,7 @@ $gradientFor = static function (int $id) use ($gradients): string {
         <div class="sidebar__group">
             <div class="sidebar__label">Аккаунт</div>
             <?php if (in_array($user['role'] ?? null, ['author', 'admin'], true)): ?>
-                <a class="sidebar__link" href="/author">
+                <a class="sidebar__link" href="/author" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><path d="M12 19v3"></path><path d="M8 22h8"></path>
                     </svg>
@@ -117,7 +117,7 @@ $gradientFor = static function (int $id) use ($gradients): string {
                 </a>
             <?php endif; ?>
             <?php if (($user['role'] ?? null) === 'admin'): ?>
-                <a class="sidebar__link" href="/admin">
+                <a class="sidebar__link" href="/admin" data-turbo="false">
                     <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M7 8h10"></path><path d="M7 12h10"></path><path d="M7 16h6"></path>
                     </svg>
@@ -454,11 +454,14 @@ $gradientFor = static function (int $id) use ($gradients): string {
             }
         });
     });
-    /* close menus on outside click */
-    document.addEventListener('click', function () {
-        document.querySelectorAll('.medialib__ctx-menu').forEach(function (m) { m.hidden = true; });
-        document.querySelectorAll('.js-dot-btn').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
-    });
+    /* close menus on outside click (guarded: script re-runs per Turbo visit) */
+    if (!window.__rsCtxMenuDocBound) {
+        window.__rsCtxMenuDocBound = true;
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.medialib__ctx-menu').forEach(function (m) { m.hidden = true; });
+            document.querySelectorAll('.js-dot-btn').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+        });
+    }
 
     /* ── Unsubscribe ──────────────────────────── */
     document.querySelectorAll('.js-unsubscribe').forEach(function (btn) {
