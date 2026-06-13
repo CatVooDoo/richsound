@@ -45,6 +45,15 @@ foreach ($tracks as $track) {
 $authorId   = (int) ($author['id'] ?? 0);
 $authorName = (string) ($author['name'] ?? 'Автор');
 $isSelf     = $user !== null && (int) $user['id'] === $authorId;
+
+$isAuthenticated = $user !== null;
+$userName        = $user['name'] ?? null;
+$roleLabels      = ['listener' => 'Слушатель', 'author' => 'Автор', 'admin' => 'Администратор'];
+$userRole        = $isAuthenticated ? ($roleLabels[$user['role'] ?? ''] ?? 'Аккаунт') : 'Гость';
+
+// Context for the shared sidebar partial (no nav item matches an artist page).
+$navActive = '';
+$brandMeta = $userRole;
 ?><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -56,49 +65,26 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
     <link rel="stylesheet" href="/assets/css/player.css">
     <meta name="csrf-token" content="<?= \App\Core\Csrf::token() ?>">
     <style>
-        /* ── page shell ─────────────────────────────────────── */
-        .ap-wrap {
-            min-height: 100vh;
-            background: #0a0a12;
-            padding-bottom: 100px; /* space for fixed player */
-            font-family: "Sora", "Segoe UI", system-ui, sans-serif;
-            color: #fff;
-        }
+        /* ── Artist profile — hero + content blocks living inside the
+              dashboard shell's .main__content (home.css owns the shell). ── */
 
-        /* gradient banner behind hero */
-        .ap-banner {
-            width: 100%;
-            min-height: 280px;
-            background: linear-gradient(180deg, #1a0a2e 0%, #0a0a12 100%);
-            position: relative;
+        /* Rounded hero header (was a full-bleed banner before the page got
+           the .dashboard shell). */
+        .ap-hero {
+            display: flex; align-items: flex-end; gap: 28px;
+            position: relative; overflow: hidden;
+            padding: 36px 36px 32px;
+            border-radius: var(--radius-xl, 32px);
+            background: linear-gradient(180deg, #1a0a2e 0%, rgba(14, 14, 22, 0.45) 100%);
+            border: 1px solid var(--stroke);
         }
-        .ap-banner::before {
+        .ap-hero::before {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(139,92,246,.25) 0%, transparent 70%);
             pointer-events: none;
         }
-
-        .ap-inner { max-width: 1000px; margin: 0 auto; padding: 0 32px; }
-
-        /* ── top line: back link + theme toggle ─────────────── */
-        .ap-topline {
-            display: flex; align-items: center; justify-content: space-between;
-            padding-top: 24px;
-        }
-        .ap-back {
-            display: inline-flex; align-items: center; gap: 6px;
-            color: rgba(255,255,255,.5); font-size: 13px; text-decoration: none;
-            transition: color .15s;
-        }
-        .ap-back:hover { color: #fff; }
-
-        /* ── hero ───────────────────────────────────────────── */
-        .ap-hero {
-            display: flex; align-items: flex-end; gap: 28px;
-            padding: 24px 0 32px;
-        }
+        .ap-hero > * { position: relative; }
 
         .ap-avatar {
             width: 180px; height: 180px; border-radius: 50%; flex-shrink: 0;
@@ -116,7 +102,7 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
         }
 
         .ap-hero-name {
-            font-size: clamp(32px, 5vw, 64px); font-weight: 700; line-height: 1.05;
+            font-size: clamp(32px, 5vw, 60px); font-weight: 700; line-height: 1.05;
             color: #fff; margin: 0 0 16px; letter-spacing: -.02em;
         }
 
@@ -157,15 +143,10 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
         }
         .btn-subscribe.subscribed:hover { border-color: rgba(255,255,255,.7); color: #fff; }
 
-        .ap-back:focus-visible { outline: none; color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-
         .ap-login-hint { font-size: 13px; color: rgba(255,255,255,.35); }
         .ap-login-hint a { color: #a78bfa; text-decoration: none; transition: color .15s; }
         .ap-login-hint a:hover { color: #c4b5fd; }
         .ap-login-hint a:focus-visible { outline: none; text-decoration: underline; text-underline-offset: 2px; }
-
-        /* ── content area ───────────────────────────────────── */
-        .ap-content { padding: 0 0 40px; }
 
         /* ── section headers ────────────────────────────────── */
         .ap-section { margin-top: 40px; }
@@ -245,8 +226,7 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
 
         /* ── responsive ─────────────────────────────────────── */
         @media (max-width: 640px) {
-            .ap-inner { padding: 0 16px; }
-            .ap-hero { flex-direction: column; align-items: center; text-align: center; padding: 20px 0 28px; }
+            .ap-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px 20px 28px; }
             .ap-avatar { width: 140px; height: 140px; }
             .ap-hero-stats { justify-content: center; }
             .ap-hero-actions { justify-content: center; }
@@ -256,23 +236,14 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
         }
 
         /* ── light theme ────────────────────────────────────────
-           Palette matches home.css [data-theme="light"]: lavender-
-           white surface, near-black ink. Avatar and cover gradients
-           stand in for artwork and keep their colours. */
-        [data-theme="light"] .ap-wrap {
-            background: #f1eff8;
-            color: #16131f;
+           Palette matches home.css [data-theme="light"]. The avatar and
+           cover gradients stand in for artwork and keep their colours. */
+        [data-theme="light"] .ap-hero {
+            background: linear-gradient(180deg, #e9e4f7 0%, #ffffff 100%);
         }
-        [data-theme="light"] .ap-banner {
-            background: linear-gradient(180deg, #e9e4f7 0%, #f1eff8 100%);
-        }
-        [data-theme="light"] .ap-banner::before {
+        [data-theme="light"] .ap-hero::before {
             background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(139,92,246,.14) 0%, transparent 70%);
         }
-
-        [data-theme="light"] .ap-back { color: rgba(20,16,40,.5); }
-        [data-theme="light"] .ap-back:hover,
-        [data-theme="light"] .ap-back:focus-visible { color: #16131f; }
 
         [data-theme="light"] .ap-hero-label { color: rgba(20,16,40,.45); }
         [data-theme="light"] .ap-hero-name  { color: #16131f; }
@@ -319,185 +290,159 @@ $isSelf     = $user !== null && (int) $user['id'] === $authorId;
         [data-theme="light"] .ap-empty { color: rgba(20,16,40,.45); }
     </style>
 </head>
-<body class="ap-wrap">
+<body class="page">
+<div class="dashboard">
+    <?php require __DIR__ . '/../partials/sidebar.php'; ?>
 
-<div class="ap-banner">
-    <div class="ap-inner">
-        <div class="ap-topline">
-            <a class="ap-back" href="/">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                На главную
-            </a>
-            <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
-                <span class="theme-icon" aria-hidden="true"></span>
-            </button>
-        </div>
+    <main class="dashboard__main main">
+        <header class="main__topbar topbar">
+            <nav class="topbar__tabs tabs" aria-label="Разделы">
+                <a class="tabs__item" href="/">Музыка</a>
+                <a class="tabs__item" href="/podcasts">Подкасты</a>
+                <a class="tabs__item" href="/broadcasts">Эфиры</a>
+            </nav>
 
-        <div class="ap-hero">
-            <div class="ap-avatar"<?= !empty($author['avatar']) ? ' style="background-image:url(\'' . $h((string) $author['avatar']) . '\')"' : '' ?>></div>
+            <div class="topbar__actions">
+                <form class="search js-search-form" role="search" aria-label="Поиск" action="/search" method="get">
+                    <svg class="search__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <input class="search__field js-search-field" type="search" name="q"
+                           placeholder="Искать в Richsound..." autocomplete="off">
+                    <div class="search-dropdown js-search-dropdown" hidden></div>
+                </form>
 
-            <div class="ap-hero-info">
-                <p class="ap-hero-label">Исполнитель</p>
-                <h1 class="ap-hero-name"><?= $h($authorName) ?></h1>
+                <button class="theme-toggle-btn" data-theme-toggle aria-label="Переключить тему">
+                    <span class="theme-icon" aria-hidden="true"></span>
+                </button>
 
-                <div class="ap-hero-stats">
-                    <span><strong><?= $h((int) ($author['tracks_count'] ?? 0)) ?></strong> треков</span>
-                    <span><strong><?= $h((int) ($author['albums_count'] ?? 0)) ?></strong> альбомов</span>
-                    <span><strong><?= $h((int) ($author['subscribers_count'] ?? 0)) ?></strong> подписчиков</span>
-                </div>
-
-                <?php if (!empty($author['bio'])): ?>
-                    <p class="ap-hero-bio"><?= $h($author['bio']) ?></p>
-                <?php endif; ?>
-
-                <div class="ap-hero-actions">
-                    <?php if ($playlist !== []): ?>
-                        <button class="ap-play-btn js-play-track" type="button"
-                                data-track-index="0" aria-label="Слушать треки автора">
-                            <svg class="player__icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <polygon points="6 3 20 12 6 21 6 3"/>
-                            </svg>
-                            <svg class="player__icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <rect x="6" y="4" width="4" height="16" rx="2"/><rect x="14" y="4" width="4" height="16" rx="2"/>
-                            </svg>
-                        </button>
-                    <?php endif; ?>
-
-                    <?php if ($user !== null && !$isSelf): ?>
-                        <button type="button"
-                                class="btn-subscribe js-subscribe<?= $isSubscribed ? ' subscribed' : '' ?>"
-                                data-author-id="<?= $h($authorId) ?>"
-                                data-subscribed="<?= $isSubscribed ? '1' : '0' ?>">
-                            <?= $isSubscribed ? 'Подписан' : 'Подписаться' ?>
-                        </button>
-                    <?php elseif ($user === null): ?>
-                        <span class="ap-login-hint"><a href="/login" data-turbo="false">Войди</a>, чтобы подписаться</span>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Content -->
-<div class="ap-inner ap-content">
-
-    <!-- Tracks -->
-    <div class="ap-section">
-        <div class="ap-section-head">
-            <h2>Треки</h2>
-            <span class="ap-section-count"><?= $h(count($tracks)) ?> шт.</span>
-        </div>
-
-        <?php if ($tracks !== []): ?>
-            <div class="ap-tracks">
-                <?php foreach ($tracks as $i => $track): ?>
-                    <?php $tid = (int) ($track['id'] ?? 0); $idx = $trackIndexById[$tid] ?? null; ?>
-                    <div class="ap-track<?= $idx !== null ? ' js-play-track' : '' ?>"
-                         <?= $idx !== null ? 'data-track-index="' . $h((string) $idx) . '" tabindex="0" role="button"' : '' ?>>
-                        <div class="ap-track__num-wrap">
-                            <span class="ap-track__num"><?= $h($i + 1) ?></span>
-                            <span class="ap-track__play">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                            </span>
-                        </div>
-                        <div class="ap-track__cover"<?= !empty($track['cover_path']) ? ' style="background-image:url(\'' . $h((string) $track['cover_path']) . '\')"' : '' ?>></div>
-                        <div class="ap-track__info">
-                            <p class="ap-track__title"><?= $h($track['title']) ?></p>
-                            <?php if (!empty($track['album_title'])): ?>
-                                <p class="ap-track__sub"><?= $h($track['album_title']) ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <span class="ap-track__dur"><?= $h($formatDuration($track['duration'] ?? 0)) ?></span>
-                        <span class="ap-track__likes">♥ <?= $h((int) ($track['likes_count'] ?? 0)) ?></span>
+                <?php if ($isAuthenticated): ?>
+                    <div class="topbar__profile">
+                        <span class="topbar__profile-name"><?= $h((string) $userName) ?></span>
+                        <span class="topbar__profile-role"><?= $h((string) ($user['email'] ?? '')) ?></span>
                     </div>
-                <?php endforeach; ?>
+                <?php else: ?>
+                    <a class="topbar__auth-link" href="/login" data-turbo="false">Войти</a>
+                    <a class="topbar__auth-link topbar__auth-link--primary" href="/register" data-turbo="false">Регистрация</a>
+                <?php endif; ?>
             </div>
-        <?php else: ?>
-            <p class="ap-empty">У этого автора пока нет треков.</p>
-        <?php endif; ?>
-    </div>
+        </header>
 
-    <!-- Albums -->
-    <?php if ($albums !== []): ?>
-        <div class="ap-section">
-            <div class="ap-section-head">
-                <h2>Альбомы</h2>
-                <span class="ap-section-count"><?= $h(count($albums)) ?> шт.</span>
+        <div class="main__content">
+
+            <div class="ap-hero">
+                <div class="ap-avatar"<?= !empty($author['avatar']) ? ' style="background-image:url(\'' . $h((string) $author['avatar']) . '\')"' : '' ?>></div>
+
+                <div class="ap-hero-info">
+                    <p class="ap-hero-label">Исполнитель</p>
+                    <h1 class="ap-hero-name"><?= $h($authorName) ?></h1>
+
+                    <div class="ap-hero-stats">
+                        <span><strong><?= $h((int) ($author['tracks_count'] ?? 0)) ?></strong> треков</span>
+                        <span><strong><?= $h((int) ($author['albums_count'] ?? 0)) ?></strong> альбомов</span>
+                        <span><strong><?= $h((int) ($author['subscribers_count'] ?? 0)) ?></strong> подписчиков</span>
+                    </div>
+
+                    <?php if (!empty($author['bio'])): ?>
+                        <p class="ap-hero-bio"><?= $h($author['bio']) ?></p>
+                    <?php endif; ?>
+
+                    <div class="ap-hero-actions">
+                        <?php if ($playlist !== []): ?>
+                            <button class="ap-play-btn js-play-track" type="button"
+                                    data-track-index="0" aria-label="Слушать треки автора">
+                                <svg class="player__icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <polygon points="6 3 20 12 6 21 6 3"/>
+                                </svg>
+                                <svg class="player__icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <rect x="6" y="4" width="4" height="16" rx="2"/><rect x="14" y="4" width="4" height="16" rx="2"/>
+                                </svg>
+                            </button>
+                        <?php endif; ?>
+
+                        <?php if ($user !== null && !$isSelf): ?>
+                            <button type="button"
+                                    class="btn-subscribe js-subscribe<?= $isSubscribed ? ' subscribed' : '' ?>"
+                                    data-author-id="<?= $h($authorId) ?>"
+                                    data-subscribed="<?= $isSubscribed ? '1' : '0' ?>">
+                                <?= $isSubscribed ? 'Подписан' : 'Подписаться' ?>
+                            </button>
+                        <?php elseif ($user === null): ?>
+                            <span class="ap-login-hint"><a href="/login" data-turbo="false">Войди</a>, чтобы подписаться</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-            <div class="ap-albums">
-                <?php foreach ($albums as $album): ?>
-                    <a class="ap-album" href="/albums/<?= $h($album['id']) ?>">
-                        <div class="ap-album__cover"<?= !empty($album['cover_path']) ? ' style="background-image:url(\'' . $h((string) $album['cover_path']) . '\')"' : '' ?>></div>
-                        <p class="ap-album__title"><?= $h($album['title']) ?></p>
-                        <p class="ap-album__meta">
-                            <?= $h((int) $album['tracks_count']) ?> треков
-                            <?= !empty($album['released_at']) ? ' · ' . $h(substr((string) $album['released_at'], 0, 4)) : '' ?>
-                        </p>
-                    </a>
-                <?php endforeach; ?>
+
+            <!-- Tracks -->
+            <div class="ap-section">
+                <div class="ap-section-head">
+                    <h2>Треки</h2>
+                    <span class="ap-section-count"><?= $h(count($tracks)) ?> шт.</span>
+                </div>
+
+                <?php if ($tracks !== []): ?>
+                    <div class="ap-tracks">
+                        <?php foreach ($tracks as $i => $track): ?>
+                            <?php $tid = (int) ($track['id'] ?? 0); $idx = $trackIndexById[$tid] ?? null; ?>
+                            <div class="ap-track<?= $idx !== null ? ' js-play-track' : '' ?>"
+                                 <?= $idx !== null ? 'data-track-index="' . $h((string) $idx) . '" tabindex="0" role="button"' : '' ?>>
+                                <div class="ap-track__num-wrap">
+                                    <span class="ap-track__num"><?= $h($i + 1) ?></span>
+                                    <span class="ap-track__play">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    </span>
+                                </div>
+                                <div class="ap-track__cover"<?= !empty($track['cover_path']) ? ' style="background-image:url(\'' . $h((string) $track['cover_path']) . '\')"' : '' ?>></div>
+                                <div class="ap-track__info">
+                                    <p class="ap-track__title"><?= $h($track['title']) ?></p>
+                                    <?php if (!empty($track['album_title'])): ?>
+                                        <p class="ap-track__sub"><?= $h($track['album_title']) ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="ap-track__dur"><?= $h($formatDuration($track['duration'] ?? 0)) ?></span>
+                                <span class="ap-track__likes">♥ <?= $h((int) ($track['likes_count'] ?? 0)) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="ap-empty">У этого автора пока нет треков.</p>
+                <?php endif; ?>
             </div>
+
+            <!-- Albums -->
+            <?php if ($albums !== []): ?>
+                <div class="ap-section">
+                    <div class="ap-section-head">
+                        <h2>Альбомы</h2>
+                        <span class="ap-section-count"><?= $h(count($albums)) ?> шт.</span>
+                    </div>
+                    <div class="ap-albums">
+                        <?php foreach ($albums as $album): ?>
+                            <a class="ap-album" href="/albums/<?= $h($album['id']) ?>">
+                                <div class="ap-album__cover"<?= !empty($album['cover_path']) ? ' style="background-image:url(\'' . $h((string) $album['cover_path']) . '\')"' : '' ?>></div>
+                                <p class="ap-album__title"><?= $h($album['title']) ?></p>
+                                <p class="ap-album__meta">
+                                    <?= $h((int) $album['tracks_count']) ?> треков
+                                    <?= !empty($album['released_at']) ? ' · ' . $h(substr((string) $album['released_at'], 0, 4)) : '' ?>
+                                </p>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
         </div>
-    <?php endif; ?>
+    </main>
 
+    <?php require __DIR__ . '/../partials/player-bar.php'; ?>
 </div>
-
-<!-- Fixed player -->
-<footer class="player-bar player-bar--fixed" data-player-root aria-label="Музыкальный плеер">
-    <div class="player__now">
-        <div class="player__art" data-player-cover></div>
-        <div class="player__info">
-            <p class="player__title" data-player-title>Трек не выбран</p>
-            <p class="player__artist" data-player-artist>Выбери трек</p>
-        </div>
-        <button class="player__btn player__btn--heart" type="button" aria-label="В избранное">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 21-1.45-1.32C5.4 15 2 11.86 2 8a5 5 0 0 1 9.08-2.92A5 5 0 0 1 20 8c0 3.86-3.4 7-8.55 11.68z"/></svg>
-        </button>
-    </div>
-    <div class="player__center">
-        <div class="player__controls">
-            <button class="player__btn player__btn--shuffle" type="button" tabindex="-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-            </button>
-            <button class="player__btn player__btn--prev" type="button" data-player-prev aria-label="Предыдущий трек">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16" rx="1"/></svg>
-            </button>
-            <button class="player__btn player__btn--play" type="button" data-player-toggle aria-label="Воспроизвести">
-                <svg class="player__icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <svg class="player__icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="2"/><rect x="14" y="4" width="4" height="16" rx="2"/></svg>
-            </button>
-            <button class="player__btn player__btn--next" type="button" data-player-next aria-label="Следующий трек">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16" rx="1"/></svg>
-            </button>
-            <button class="player__btn player__btn--repeat" type="button" tabindex="-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-            </button>
-        </div>
-        <div class="player__bar">
-            <span class="player__time" data-player-current-time>0:00</span>
-            <div class="player__slider" data-player-slider-progress>
-                <div class="player__slider-rail"></div>
-                <div class="player__slider-fill"></div>
-                <input class="player__range" type="range" min="0" max="100" value="0" step="0.1" data-player-progress aria-label="Позиция воспроизведения">
-            </div>
-            <span class="player__time" data-player-duration>0:00</span>
-        </div>
-    </div>
-    <div class="player__side">
-        <button class="player__btn" type="button" aria-label="Громкость">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-        </button>
-        <div class="player__slider player__slider--vol" data-player-slider-volume>
-            <div class="player__slider-rail"></div>
-            <div class="player__slider-fill"></div>
-            <input class="player__range" type="range" min="0" max="1" step="0.01" value="0.8" data-player-volume aria-label="Громкость">
-        </div>
-    </div>
-</footer>
 
 <?php require __DIR__ . '/../partials/mobile-player.php'; ?>
 
 <?php require __DIR__ . '/../partials/player-config.php'; ?>
+<script src="/assets/js/search.js"></script>
 <script>
 (function () {
     'use strict';

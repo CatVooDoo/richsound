@@ -25,63 +25,7 @@ $formatDuration = static function (mixed $s): string {
 </head>
 <body class="page">
 <div class="dashboard">
-    <aside class="dashboard__sidebar sidebar">
-        <div class="sidebar__brand brand">
-            <div class="brand__title">Richsound</div>
-            <div class="brand__meta">Плейлист</div>
-        </div>
-        <nav class="sidebar__nav" aria-label="Навигация">
-            <a class="sidebar__link" href="/">
-                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path><path d="M9 21v-6h6v6"></path>
-                </svg>
-                <span class="sidebar__text">Главная</span>
-            </a>
-            <a class="sidebar__link" href="/search">
-                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
-                </svg>
-                <span class="sidebar__text">Поиск</span>
-            </a>
-            <a class="sidebar__link sidebar__link--active" href="/library">
-                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22z"></path><path d="M8 4v16"></path>
-                </svg>
-                <span class="sidebar__text">Библиотека</span>
-            </a>
-            <a class="sidebar__link" href="/podcasts">
-                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"></path>
-                    <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                </svg>
-                <span class="sidebar__text">Подкасты</span>
-                <span class="sidebar__soon">Скоро</span>
-            </a>
-            <a class="sidebar__link" href="/broadcasts">
-                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="2"></circle>
-                    <path d="M8.5 8.5A5 5 0 0 0 8.5 15.5"></path><path d="M15.5 8.5A5 5 0 0 1 15.5 15.5"></path>
-                    <path d="M5 5A10 10 0 0 0 5 19"></path><path d="M19 5A10 10 0 0 1 19 19"></path>
-                </svg>
-                <span class="sidebar__text">Эфиры</span>
-                <span class="sidebar__soon">Скоро</span>
-            </a>
-        </nav>
-        <?php if ($user !== []): ?>
-            <div class="sidebar__user">
-                <?php if (!empty($user['avatar'])): ?>
-                    <img src="<?= $h($user['avatar']) ?>" alt="Аватар" class="sidebar__avatar">
-                <?php else: ?>
-                    <div class="sidebar__avatar-placeholder"><?= $h(mb_strtoupper(mb_substr($user['name'] ?? '?', 0, 1))) ?></div>
-                <?php endif; ?>
-                <div>
-                    <div class="sidebar__user-name"><?= $h($user['name'] ?? '') ?></div>
-                    <div class="sidebar__user-role"><?= $h($user['role'] ?? '') ?></div>
-                </div>
-            </div>
-        <?php endif; ?>
-    </aside>
+    <?php $navActive = 'library'; $brandMeta = 'Плейлист'; require __DIR__ . '/../partials/sidebar.php'; ?>
 
     <main class="dashboard__main">
         <section class="section" style="padding-top:32px;">
