@@ -1747,11 +1747,9 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
     .dashboard__sidebar form,
     .dashboard__sidebar .sidebar__upgrade { display: none; }
 
-    /* Hide Подкасты (5th) and Эфиры (6th) from nav */
-    .sidebar__nav .sidebar__link:nth-child(n+5) { display: none; }
-
-    /* Show Создать button on mobile */
-    .sidebar__link--create { display: flex; }
+    /* Bottom nav shows only Главная / Поиск / Моя медиатека.
+       Hide «Создать» (4th) and the coming-soon Подкасты/Эфиры (5th/6th). */
+    .sidebar__nav .sidebar__link:nth-child(n+4) { display: none; }
 
     .sidebar__nav {
         display: contents;
@@ -1762,18 +1760,20 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 4px;
+        gap: 5px;
         padding: 8px 4px;
         border-radius: 0;
         border: 0;
         background: transparent;
         min-height: 44px;
-        color: #a7a7a7;
+        color: #9a9aa5;
         position: relative;
         text-decoration: none;
+        transition: color 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
     }
 
-    .sidebar__nav .sidebar__icon { width: 24px; height: 24px; opacity: 1; color: inherit; }
+    .sidebar__nav .sidebar__icon { width: 23px; height: 23px; opacity: 1; color: inherit; }
 
     .sidebar__nav .sidebar__text {
         display: block;
@@ -1784,11 +1784,21 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.5; }
         letter-spacing: 0.01em;
     }
 
-    .sidebar__nav .sidebar__link--active,
-    .sidebar__nav .sidebar__link:hover { background: transparent; color: #fff; }
-
-    .sidebar__nav .sidebar__link--active .sidebar__text,
-    .sidebar__nav .sidebar__link:hover .sidebar__text { font-weight: 700; }
+    /* Active tab: accent colour + a small indicator bar at the top edge. */
+    .sidebar__nav .sidebar__link:hover { color: #fff; }
+    .sidebar__nav .sidebar__link--active { color: var(--accent); }
+    .sidebar__nav .sidebar__link--active .sidebar__text { font-weight: 700; }
+    .sidebar__nav .sidebar__link--active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 26px;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+        background: var(--accent);
+    }
 
     /* ── Mini player ───────────────────────────────────────────── */
     .dashboard__player {
@@ -3786,8 +3796,8 @@ body.mplayer-open { overflow: hidden; }
     box-shadow: var(--shadow-deep), 0 0 0 1px rgba(139, 92, 246, 0.05) inset;
 }
 
-/* Sidebar chrome — desktop only; on mobile the sidebar collapses into
-   the dark bottom-nav bar, which must stay dark. */
+/* Sidebar chrome — desktop column. The mobile bottom-nav light variant
+   lives in the @media (max-width:760px) light block further below. */
 @media (min-width: 761px) {
     [data-theme="light"] .dashboard__sidebar {
         background:
@@ -3807,6 +3817,33 @@ body.mplayer-open { overflow: hidden; }
         border-color: rgba(139, 92, 246, 0.3);
         color: var(--text);
         box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.14) inset, 0 4px 16px rgba(139, 92, 246, 0.12);
+    }
+}
+
+/* Mobile bottom chrome — light theme. The dark values in the
+   @media (max-width:760px) block above are the dark-theme default; these
+   override the bottom nav bar and mini player to match the light surface. */
+@media (max-width: 760px) {
+    [data-theme="light"] .dashboard__sidebar {
+        background: rgba(255, 255, 255, 0.94);
+        border-top-color: var(--stroke);
+    }
+    [data-theme="light"] .sidebar__nav .sidebar__link        { color: var(--muted); }
+    [data-theme="light"] .sidebar__nav .sidebar__link:hover   { color: var(--text); }
+    [data-theme="light"] .sidebar__nav .sidebar__link--active { color: var(--accent); }
+
+    [data-theme="light"] .dashboard__player {
+        background: rgba(255, 255, 255, 0.97);
+        border-top-color: var(--stroke);
+    }
+    [data-theme="light"] .dashboard__player .player__title  { color: var(--text); }
+    [data-theme="light"] .dashboard__player .player__artist { color: var(--muted); }
+    [data-theme="light"] .dashboard__player .player__btn        { color: #6b6878; }
+    [data-theme="light"] .dashboard__player .player__btn:hover  { color: var(--text); }
+    [data-theme="light"] .dashboard__player .player__btn--play {
+        background: var(--text);
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(76, 60, 130, 0.25);
     }
 }
 
@@ -3960,9 +3997,9 @@ body.mplayer-open { overflow: hidden; }
 [data-theme="light"] .role-card__cta--accent       { color: #6d28d9; }
 [data-theme="light"] .role-card__cta--accent:hover { color: #5b21b6; }
 
-/* Player bar — desktop only; on mobile this footer becomes the dark
-   mini-player and the .player__* classes are reused by it, so keep them
-   dark there (the full-screen mobile player is never themed light). */
+/* Player bar — desktop. The mobile mini-player light variant is handled in
+   the @media (max-width:760px) light block above; the full-screen mobile
+   player (.mplayer__*) stays dark by design. */
 @media (min-width: 761px) {
 [data-theme="light"] .dashboard__player {
     background: #ffffff;
