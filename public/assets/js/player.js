@@ -52,6 +52,7 @@
     var userPlaylists  = [];
     var queuePanel     = null;  /* desktop queue popup (lives in body) */
     var queueOpen      = false;
+    var coverModal     = null;  /* desktop cover-art preview (lives in body) */
 
     /* fresh DOM refs, refilled by rebind() on every page visit */
     var ui = {};
@@ -101,6 +102,54 @@
 
     function escHtml(str) {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ── Cover-art preview (desktop only) ────────
+       Click the player thumbnail to blow the artwork up in a lightbox. */
+
+    function onCoverKey(e) {
+        if (e.key === 'Escape') { closeCoverPreview(); }
+    }
+
+    function closeCoverPreview() {
+        if (!coverModal) { return; }
+        document.removeEventListener('keydown', onCoverKey);
+        coverModal.remove();
+        coverModal = null;
+    }
+
+    function openCoverPreview() {
+        /* Desktop only — the mobile mini player has its own full-screen view. */
+        if (!window.matchMedia('(min-width: 981px)').matches) { return; }
+        var track = queue[currentIndex];
+        if (!track || !track.coverUrl) { return; }
+
+        closeCoverPreview();
+
+        coverModal = document.createElement('div');
+        coverModal.className = 'cover-preview';
+        coverModal.innerHTML =
+            '<div class="cover-preview__backdrop" data-cover-close></div>' +
+            '<figure class="cover-preview__box">' +
+                '<img class="cover-preview__img" src="' + escHtml(track.coverUrl) + '" alt="">' +
+                '<figcaption class="cover-preview__caption">' +
+                    '<span class="cover-preview__title">' + escHtml(track.title || '') + '</span>' +
+                    '<span class="cover-preview__artist">' + escHtml(track.artist || '') + '</span>' +
+                '</figcaption>' +
+                '<button class="cover-preview__close" type="button" data-cover-close aria-label="Закрыть">' +
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+                '</button>' +
+            '</figure>';
+
+        coverModal.addEventListener('click', function (e) {
+            if (e.target.closest('[data-cover-close]')) { closeCoverPreview(); }
+        });
+
+        document.body.appendChild(coverModal);
+        requestAnimationFrame(function () {
+            if (coverModal) { coverModal.classList.add('cover-preview--open'); }
+        });
+        document.addEventListener('keydown', onCoverKey);
     }
 
     /* ── painting ────────────────────────────── */
@@ -445,6 +494,7 @@
             queuePanel = null;
             queueOpen  = false;
         }
+        closeCoverPreview();
         seeking = false;
 
         var root = document.querySelector('[data-player-root]');
@@ -475,6 +525,16 @@
         if (ui.nextButton)   { ui.nextButton.addEventListener('click', function () { goNext(true); }); }
         if (ui.heartButton)  { ui.heartButton.addEventListener('click', toggleLike); }
         if (ui.queueButton)  { ui.queueButton.addEventListener('click', function () { toggleQueuePanel(); }); }
+
+        if (ui.coverEl) {
+            ui.coverEl.setAttribute('role', 'button');
+            ui.coverEl.setAttribute('tabindex', '0');
+            ui.coverEl.setAttribute('aria-label', 'Открыть обложку');
+            ui.coverEl.addEventListener('click', openCoverPreview);
+            ui.coverEl.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCoverPreview(); }
+            });
+        }
 
         if (ui.shuffleButton) {
             ui.shuffleButton.removeAttribute('tabindex');

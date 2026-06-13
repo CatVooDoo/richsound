@@ -4274,3 +4274,98 @@ body.mplayer-open { overflow: hidden; }
 }
 
 .mplayer__menu-playlist:active { background: rgba(255, 255, 255, 0.07); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Cover-art preview (desktop) — click the player thumbnail to zoom.
+   The overlay lives in <body>; styling is theme-agnostic (dark scrim).
+   Mirrored in player.css for pages that don't load home.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 981px) {
+    .dashboard__player .player__art {
+        cursor: pointer;
+        position: relative;
+    }
+    .dashboard__player .player__art::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: rgba(0, 0, 0, 0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cpolyline points='9 21 3 21 3 15'/%3E%3Cline x1='21' y1='3' x2='14' y2='10'/%3E%3Cline x1='3' y1='21' x2='10' y2='14'/%3E%3C/svg%3E") center / 18px no-repeat;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+    .dashboard__player .player__art:hover::after,
+    .dashboard__player .player__art:focus-visible::after { opacity: 1; }
+}
+
+.cover-preview {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.cover-preview--open { opacity: 1; }
+
+.cover-preview__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 10, 0.74);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.cover-preview__box {
+    position: relative;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    transform: scale(0.94);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cover-preview--open .cover-preview__box { transform: scale(1); }
+
+.cover-preview__img {
+    width: min(64vh, 460px);
+    height: min(64vh, 460px);
+    object-fit: cover;
+    border-radius: 18px;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+
+.cover-preview__caption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+    font-family: "Sora", "Segoe UI", system-ui, sans-serif;
+}
+.cover-preview__title  { font-size: 1.1rem; font-weight: 700; color: #fff; }
+.cover-preview__artist { font-size: 0.9rem; color: rgba(255, 255, 255, 0.6); }
+
+.cover-preview__close {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+.cover-preview__close:hover { background: rgba(255, 255, 255, 0.22); transform: scale(1.06); }
